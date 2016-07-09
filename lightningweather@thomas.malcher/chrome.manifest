@@ -1,0 +1,3 @@
+content     lightningweather    chrome/content/
+overlay chrome://messenger/content/messenger.xul chrome://lightningweather/content/index.xul
+resource SimpleStorage.js chrome://lightningweather/content/SimpleStorage.js

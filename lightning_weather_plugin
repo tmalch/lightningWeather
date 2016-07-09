@@ -1,0 +1,42 @@
+http://stackoverflow.com/questions/5199911/how-can-i-hack-the-thunderbird-lightning-extension-to-fully-color-categories
+
+Debugging
+-----------------
+ + https://developer.mozilla.org/en-US/Add-ons/Setting_up_extension_development_environment
+ + thunderbird extension DOM Inspector is useful
+ + Remote Debugging von Thunderbird mit Firefox JS Debugger https://developer.mozilla.org/en-US/docs/Mozilla/Debugging/Debugging_JavaScript
+   Devoloper->Connect wähle MainProcess, debugger funktioniert auch für js code der in xml eingebettet ist
+   Auch der Inspector usw funktionieren
+ + thunderbird -no-remote -P TESTEUser
+
+userChrome.css
+----------
+We can change background in file
+~/.thunderbird/*.default/chrome/userChrome.css
+
+with following css rule:
+	.calendar-event-column-linebox {
+		  background-color: #00ff00 !important;
+		  background-image: url("weather.png");
+		  background-size: contain;
+	}
+
+
+
+XUL/XBL/JS
+----------------
+Mit xbl kann eine extension die struktur der Gui verändern (Dinge hinzufügen). Siehe dazu die umsetzung in der calendar-tweaks extension
+in den xbl files ist auch einiges an js code zu finden.
+
+Struktur der views
+------------------------------
+Alle views sind von calendar-base-view.xml abgeleitet
+calendar-week-view und calendar-day-view sind abgeleitet von calendar-multiday-view, calendar-multiday-view ist abgeleitet von calendar-base-view.
+calendar-multiweek-view und calendar-month-view sind abgeleitet von calendar-month-base-view, calendar-month-base-view ist abgeleitet von calendar-base-view.
+
+
+calendar-views.xml: Highlevel views
+calendar-views.js: Highlevel JS, eg switchView, currentView, erstellen der views
+calendar-base-view.xml: Basis für alle Views
+calendar-multiday-view.xml:
+calendar-month-view.xml:
