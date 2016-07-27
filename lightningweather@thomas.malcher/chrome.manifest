@@ -2,3 +2,4 @@ content     lightningweather    chrome/content/
 overlay chrome://messenger/content/messenger.xul chrome://lightningweather/content/index.xul
 resource SimpleStorage.js chrome://lightningweather/content/SimpleStorage.js
 resource WeatherViews.js chrome://lightningweather/content/WeatherViews.js
+resource WeatherProvider.js chrome://lightningweather/content/WeatherProvider.js
