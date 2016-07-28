@@ -4,6 +4,8 @@ Cu.import("resource://SimpleStorage.js");
 Cu.import("resource://WeatherViews.js");
 Cu.import("resource://WeatherProvider.js");
 
+params.document_ref = document;
+
 function log(msg){
     dump(msg+"\n");
 }
@@ -16,8 +18,8 @@ var lightningweather = {
     forecast: null,
 
     onLoad: function(){
-        lightningweather.views = {  "day": new WeekViewWeatherModule(document.getElementById("day-view")),
-                                    "week": new WeekViewWeatherModule(document.getElementById("week-view")),
+        lightningweather.views = {  "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
+                                    "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
                                     "month": new MonthViewWeatherModule(document.getElementById("month-view")),
                                     "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))};
         for (var key in lightningweather.views) {
@@ -38,10 +40,10 @@ var lightningweather = {
         if(lightningweather.forecast){
             weather_mod.annotate(lightningweather.forecast);
         }else{ // check storage
-            lightningweather.storage.get("forecast" , function(forecast_data){
+            lightningweather.storage.get(lightningweather.forecastModule.storeageId , function(forecast_data){
                 if(forecast_data){
                     log("found forecast in Storage: ");
-                    lightningweather.forecast = new lightningweather.forecastModule.ForecastType(forecast_data);
+                    lightningweather.forecast = new Forecast(forecast_data);
                     weather_mod.annotate(lightningweather.forecast);
                 }else{ // no forecast in object or storage -> request
                     log("No forecast in Storage! request new one");
@@ -55,12 +57,12 @@ var lightningweather = {
         if(!forecast){
             return;
         }
-        lightningweather.storage.get(forecast.storeageId , function(existing_forecast) {
-            if (existing_forecast) {
-                forecast.combine(existing_forecast);
+        lightningweather.storage.get(lightningweather.forecastModule.storeageId, function(existing_forecast_data) {
+            if (existing_forecast_data) {
+                forecast.combine(new Forecast(existing_forecast_data));
             }
             lightningweather.forecast = forecast;
-            lightningweather.storage.set(forecast.storeageId, forecast, function(k){ log("saved forecast into DB")});
+            lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log("saved forecast into DB")});
             let weather_mod = lightningweather.views[currentView().type];
             weather_mod.annotate(lightningweather.forecast);
         });
@@ -94,10 +96,15 @@ window.addEventListener("load", lightningweather.onLoad , false);
 
 function teste() {
 
-    dump("teste\n")
-    var c = currentView();
-    dump(cal);
+    dump("teste\n");
+    let c = currentView();
 
+    let weather_box = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
+    weather_box.setAttribute("style", "background-color: #ffccff;");
+    let tmp = c.endDate;
+    let day_col = c.findColumnForDate(tmp);
+
+    day_col.column.topbox.appendChild(weather_box);
     try {
         c.findColumnForDate(c.today()).column.topbox.setAttribute("style", "");
     } catch (ex) {
@@ -114,7 +121,6 @@ function teste() {
     document.getElementById("multiweek-view").addEventListener("viewloaded", function(e){ dump("MULTIWEEKVIEW\n"); dump(this)});
     document.getElementById("month-view").addEventListener("viewloaded", function(e){ dump("MONTH\n"); dump(this)});
 
-    document.getElementById("month-view").findDayBoxForDate(c.today()).setAttribute("style", "background-image: url(\""+lightningweather.baseurl+"01d.png"+"\") !important; background-size: contain !important;");
 	//var daybox = document.getElementById("week-view");
 	//var today_col = daybox.findColumnForDate(daybox.today());
 	//today_col.header.setAttribute("class", "supertollescss2");

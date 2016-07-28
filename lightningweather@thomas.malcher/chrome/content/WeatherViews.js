@@ -1,7 +1,11 @@
 
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
-var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule'];
+var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule', 'HourlyViewWeatherModule', "params"];
+
+params = {
+    document_ref: this
+};
 
 function log(msg){
     dump(msg+"\n");
@@ -18,37 +22,40 @@ function ViewWeatherModule(view) {
     };
     this.annotate = function(forecast){
         log(forecast.length+"annotate "+forecast);
-        forecast.forEachFrom(cal.dateTimeToJsDate(self.view.mStartDate), function(elem){
-            let date = new Date(elem.timestamp);
-            let mozDate = cal.jsDateToDateTime(date, self.view.timezone);
-            //let mozDate = cal.jsDateToDateTime(new Date(date.getFullYear(),date.getMonth(),date.getDate())).getInTimezone(self.view.timezone);
-            //mozDate.isDate = true;
-            log("set "+elem.weather.icon+" for "+date);
-            self.setWeather(mozDate, elem.weather.icon);
+
+        forecast.forEachFrom(cal.dateTimeToJsDate(self.view.startDate), function(elem){
+            let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
+            mozDate.isDate = true;
+            if(mozDate.compare(self.view.endDate) == -1) { // mozDate < endDate
+                log("set " + elem.weather.icon + " for " + mozDate);
+                self.setWeather(mozDate, elem.weather.icon);
+            }
         });
     };
     this.clearWeather = function(mozdate){throw "NOT IMPLEMENTED"};
     this.setWeather = function(mozdate, icon){throw "NOT IMPLEMENTED"};
 }
 
-//WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
+WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
 
     this.setWeather = function(mozdate, icon){
         try {
-            let date_col = this.view.findColumnForDate(mozdate);
-            let box = date_col.column.topbox;
-            box.setAttribute("style", "background-image: url(\"" + icon + ".png" + "\") !important; background-size: contain !important;");
+            let day_col = this.view.findColumnForDate(mozdate);
+            let orient = day_col.column.getAttribute("orient");
+            let box = day_col.column.topbox;
+            box.setAttribute("orient", orient);
+            box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
         }catch (ex){
             log("setWeather:"+ex);
         }
     };
     this.clearWeather = function(mozdate){
         try {
-            let date_col = this.view.findColumnForDate(mozdate);
-            let box = date_col.column.topbox;
+            let day_col = this.view.findColumnForDate(mozdate);
+            let box = day_col.column.topbox;
             box.setAttribute("style", "");
         }catch (ex){
             log("clearWeather:"+ex);
@@ -56,55 +63,68 @@ function WeekViewWeatherModule(view) {
     };
 }
 
-//HourlyViewWeatherModule.prototype = Object.create(ViewWeatherModule);
+HourlyViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
     var self = this;
 
+    this.createWeatherBox = function(col, startMin, dur){
+        if (startMin < col.mStartMin) {
+            dur = dur - (col.mStartMin - startMin);
+            startMin = col.mStartMin;
+        }
+        if(startMin + dur > col.mEndMin){
+            log("too late "+startMin+" "+ dur);
+            if(startMin > col.mEndMin)
+                return null;
+            dur = col.mEndMin-startMin;
+        }
+
+        let weather_box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
+
+        // calculate duration pixel as the difference between
+        // start pixel and end pixel to avoid rounding errors.
+        let startPix = Math.round(startMin * col.pixelsPerMinute);
+        let endPix   = Math.round((startMin + dur) * col.pixelsPerMinute);
+        let durPix   = endPix - startPix;
+        durPix = durPix - 10;
+        let orient = col.topbox.getAttribute("orient");
+
+        weather_box.setAttribute("class","calendar-event-column-linebox");
+        if (orient == "vertical") {
+            weather_box.setAttribute("orient", "vertical");
+            weather_box.setAttribute("height", durPix);
+        } else {
+            weather_box.setAttribute("orient", "horizontal");
+            weather_box.setAttribute("width", durPix);
+        }
+        return weather_box;
+    };
+
     this.annotate = function(forecast){
-        forecast.forEachDateFrom(this.view.mStartDate, function(elem){
-            let date = elem.date;
-            let mozdate = cal.jsDateToDateTime(date, self.view.timezone);
+        forecast.forEachFrom(cal.dateTimeToJsDate(this.view.mStartDate), function(elem){
+            let mozdate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
+            mozdate.isDate = true;
+            self.clearWeather(mozdate);
             let day_col = self.view.findColumnForDate(mozdate);
             let topbox = day_col.column.topbox;
+            let orient = day_col.column.getAttribute("orient");
+            day_col.column.topbox.setAttribute("orient", orient);
             if(elem.nestedForecast){
                 elem.nestedForecast.forEach(function (elem2){
                     let datetime = new Date(elem2.timestamp);
                     let startMin = datetime.getHours()*60+datetime.getMinutes();
-                    let wbox = createWeatherBox(col, startMin, elem2.period);
-                    //wbox.setAttribute("style", elem2.weather.getStyle());
+                    let wbox = self.createWeatherBox(day_col.column, startMin, elem2.period);
                     let icon = elem2.weather.icon;
-                    wbox.setAttribute("style", "background-image: url(\"" + icon + ".png" + "\") !important; background-size: contain !important;");
-                    topbox.appendChild(wbox);
+                    wbox.setAttribute("style", "min-width: 1px; min-height: 1px; border: 5px solid red; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                    day_col.column.topbox.appendChild(wbox);
                 });
             }else{
                 let icon = elem.weather.icon;
                 topbox.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
             }
         });
-    };
-
-    this.createWeatherBox = function(col, startMin, dur){
-        if (col.mStartMin < startMin) {
-            dur = startMin - col.mStartMin;
-        }
-        if(startMin + dur > col.mEndMin){
-            dur = col.mEndMin-startMin;
-        }
-        let weather_box = createXULElement("spacer");
-        // calculate duration pixel as the difference between
-        // start pixel and end pixel to avoid rounding errors.
-
-        let startPix = Math.round(startMin * col.pixelsPerMinute);
-        let endPix   = Math.round((startMin + dur) * col.pixelsPerMinute);
-        let durPix   = endPix - startPix;
-        let orient = col.getAttribute("orient");
-        if (orient == "vertical")
-            weather_box.setAttribute("height", durPix);
-        else
-            weather_box.setAttribute("width", durPix);
-        return weather_box;
     };
 
     //this.createWeatherBoxes = function(col, dur){
@@ -139,12 +159,18 @@ function HourlyViewWeatherModule(view) {
         try {
             let date_col = this.view.findColumnForDate(date);
             let box = date_col.column.topbox;
-            box.setAttribute("style", "");
-        }catch (ex){};
+            while (date_col.column.topbox.firstChild) {
+                date_col.column.topbox.removeChild(date_col.column.topbox.firstChild);
+                log("REMOVED")
+            }
+            date_col.column.topbox.setAttribute("style", "");
+        }catch (ex){
+            log("clearWeather"+ex);
+        };
     };
 }
 
-//MonthViewWeatherModule.prototype = Object.create(ViewWeatherModule);
+MonthViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function MonthViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "month";
@@ -152,16 +178,16 @@ function MonthViewWeatherModule(view) {
 
     this.setWeather = function(mozdate, icon){
         try {
-            let date_box = self.view.findDayBoxForDate(mozdate);
-            date_box.setAttribute("style", "background-image: url(\"" + icon + ".png" + "\") !important; background-size: contain !important;");
+            let day_box = self.view.findDayBoxForDate(mozdate);
+            day_box.setAttribute("style", "background-image: url(\"" + icon  + "\") !important; background-size: contain !important;");
         }catch (ex){
             log(ex)
         };
     };
     this.clearWeather = function(mozdate){
         try {
-            let date_box = self.view.findDayBoxForDate(mozdate);
-            date_box.setAttribute("style", "");
+            let day_box = self.view.findDayBoxForDate(mozdate);
+            day_box.setAttribute("style", "");
         }catch (ex){};
     };
 }

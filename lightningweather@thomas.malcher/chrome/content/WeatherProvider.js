@@ -1,5 +1,5 @@
 
-var EXPORTED_SYMBOLS = ['OpenWeathermapModule'];
+var EXPORTED_SYMBOLS = ['OpenWeathermapModule', 'Forecast'];
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
@@ -120,7 +120,7 @@ function Forecast(data){
     let self = this;
 
     Forecast.prototype.toString = function(){
-        return "["+ self._data.reduce(function(s, e){ return s+e.timestamp+" "+e.weather.icon+", "; },"")+"]";
+        return "["+ self._data.reduce(function(s, e){ return s+e.timestamp+", "; },"")+"]";
     };
 
     this.toJson = function(){
@@ -192,7 +192,6 @@ function Forecast(data){
         this.granularity = this._data.every(e => (e.period == self._data[0].period)) ? self._data[0].period : -1;
     else
         this.granularity = -1;
-    this.storeageId = "openweather";
 
 }
 
@@ -203,7 +202,7 @@ function OpenWeathermapModule(city, callback) {
     this.callback = callback;
     this.city_id = city;
     this.baseurl = "http://openweathermap.org/img/w/";
-    this.ForecastType = Forecast;
+    this.storeageId = "openweather"+this.city_id;
     var self = this;
 
     this.requestForecast = function(){
@@ -235,15 +234,18 @@ function OpenWeathermapModule(city, callback) {
         });
         let grouped_forecast = new Map();
         list.forEach(function(e){
-            if(grouped_forecast.has(e.date)){
-                grouped_forecast.get(e.date).push(e);
+            if(grouped_forecast.has(e.date.getTime())){
+                let elem_list = grouped_forecast.get(e.date.getTime());
+                elem_list.push(e)
+                grouped_forecast.set(e.date.getTime(), elem_list);
             }else {
-                grouped_forecast.set(e.date, [e]);
+                grouped_forecast.set(e.date.getTime(), [e]);
             }
         });
 
         let daily_forecasts = new Forecast();
         grouped_forecast.forEach(function(hourly_forecasts, date){
+            log(new Date(date)+" has "+ hourly_forecasts.length+" forecasts");
             hourly_forecasts = hourly_forecasts.map(function(e){
                 return {timestamp: e.timestamp,
                         period:e.period ,
@@ -254,7 +256,7 @@ function OpenWeathermapModule(city, callback) {
                 (a.timestamp > b.timestamp)? 1: 0;});
 
 
-            let midday_timestamp = new Date(date.getTime()).setHours(12);
+            let midday_timestamp = new Date(date).setHours(12);
             let avg_day_weather = undefined;
             hourly_forecasts.reduce(function(best_delta, elem){
                 let delta = Math.abs(elem.timestamp - midday_timestamp);
@@ -267,7 +269,7 @@ function OpenWeathermapModule(city, callback) {
 
             let nestedForecast = new Forecast(hourly_forecasts);
             daily_forecasts.add({
-                timestamp: date.getTime(),
+                timestamp: date,
                 period:24*60,
                 weather: avg_day_weather,
                 published: Date.now(),
