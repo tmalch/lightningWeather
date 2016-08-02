@@ -26,7 +26,7 @@ function ViewWeatherModule(view) {
         forecast.forEachFrom(cal.dateTimeToJsDate(self.view.startDate), function(elem){
             let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
             mozDate.isDate = true;
-            if(mozDate.compare(self.view.endDate) == -1) { // mozDate < endDate
+            if(mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
                 log("set " + elem.weather.icon + " for " + mozDate);
                 self.setWeather(mozDate, elem.weather.icon);
             }
@@ -35,6 +35,7 @@ function ViewWeatherModule(view) {
     this.clearWeather = function(mozdate){throw "NOT IMPLEMENTED"};
     this.setWeather = function(mozdate, icon){throw "NOT IMPLEMENTED"};
 }
+
 
 WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function WeekViewWeatherModule(view) {

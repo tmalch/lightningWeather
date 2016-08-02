@@ -93,9 +93,9 @@ function IForecast(data){
     };
 
     this.forEachFrom = function(start, func){
-        let start_timestamp = start.getTime()
+        let start_timestamp = start.getTime();
         self.forEach(function(elem){
-            if(elem.timestamp > start_timestamp){
+            if(elem.timestamp >= start_timestamp){
                 func(elem)
             }
         })
