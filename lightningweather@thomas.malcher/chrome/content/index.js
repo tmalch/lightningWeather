@@ -18,7 +18,7 @@ var lightningweather = {
     forecast: null,
 
     onLoad: function(){
-        lightningweather.views = {  "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
+        lightningweather.views = {  "day": new WeekViewWeatherModule(document.getElementById("day-view")),
                                     "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
                                     "month": new MonthViewWeatherModule(document.getElementById("month-view")),
                                     "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))};
@@ -42,7 +42,7 @@ var lightningweather = {
         }else{ // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId , function(forecast_data){
                 if(forecast_data){
-                    log("found forecast in Storage: ");
+                    log("found forecast in Storage "+forecast_data.length);
                     lightningweather.forecast = new Forecast(forecast_data);
                     weather_mod.annotate(lightningweather.forecast);
                 }else{ // no forecast in object or storage -> request
@@ -60,6 +60,7 @@ var lightningweather = {
         lightningweather.storage.get(lightningweather.forecastModule.storeageId, function(existing_forecast_data) {
             if (existing_forecast_data) {
                 forecast.combine(new Forecast(existing_forecast_data));
+                log("combined forecasts: from storeage: "+existing_forecast_data.length+ " result: "+ forecast.length)
             }
             lightningweather.forecast = forecast;
             lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log("saved forecast into DB")});
@@ -90,7 +91,9 @@ function isViewVisible(viewname){
 
 
 window.addEventListener("load", lightningweather.onLoad , false);
-//window.setInterval(lightningweather.update, 10000);
+window.setInterval(lightningweather.update, 10000);
+
+//window.addEventListener("load", teste , false);
 //window.setInterval(teste, 6000);
 
 
@@ -99,18 +102,23 @@ function teste() {
     dump("teste\n");
     let c = currentView();
 
-    let weather_box = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
-    weather_box.setAttribute("style", "background-color: #ffccff;");
-    let tmp = c.endDate;
-    let day_col = c.findColumnForDate(tmp);
+    let test_box = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
+    test_box.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(\"http://openweathermap.org/img/w/02d.png\") !important; background-size: contain !important;");
+    test_box.setAttribute("anonid", "weatherbox");
+    let day_col = c.findColumnForDate(c.today()).column;
+    //day_col.column.appendChild(test_box);
 
-    day_col.column.topbox.appendChild(weather_box);
-    try {
-        c.findColumnForDate(c.today()).column.topbox.setAttribute("style", "");
-    } catch (ex) {
-        // This dies if no view has even been chosen this session, but that's
-        // ok because we'll just use now() below.
-    }
+    let w = document.getElementById("week-view");
+    let stack = document.getAnonymousElementByAttribute(day_col,"anonid","boxstack");
+    stack.setAttribute("class", "supertollescss2");
+    let weatherbox = document.getAnonymousElementByAttribute(day_col,"anonid","weatherbox");
+    log(weatherbox);
+    if(weatherbox == undefined)
+        stack.insertBefore(test_box, day_col.topbox);
+
+
+//    day_col.column.topbox.appendChild(test_box);
+
 //    c.findColumnForDate(c.today()).column.relayout();
     //currentView().addEventListener("viewloaded", function(e){ dump("CURRENT\n"); dump(this)});
     //currentView().addEventListener("dayselect", function(e){ dump(e+"\n")});

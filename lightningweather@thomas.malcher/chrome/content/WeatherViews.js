@@ -14,6 +14,7 @@ function log(msg){
 function ViewWeatherModule(view) {
     this.view = view;
     var self = this;
+
     this.clear = function(){
         let date_list = this.view.getDateList({});
         date_list.forEach(function (dt){
@@ -42,6 +43,7 @@ function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
 
+
     this.setWeather = function(mozdate, icon){
         try {
             let day_col = this.view.findColumnForDate(mozdate);
@@ -50,7 +52,7 @@ function WeekViewWeatherModule(view) {
             box.setAttribute("orient", orient);
             box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
         }catch (ex){
-            log("setWeather:"+ex);
+            log("setWeather: "+ex);
         }
     };
     this.clearWeather = function(mozdate){
@@ -59,7 +61,7 @@ function WeekViewWeatherModule(view) {
             let box = day_col.column.topbox;
             box.setAttribute("style", "");
         }catch (ex){
-            log("clearWeather:"+ex);
+            log("clearWeather: "+ex);
         }
     };
 }
@@ -69,105 +71,127 @@ function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
     var self = this;
-
-    this.createWeatherBox = function(col, startMin, dur){
-        if (startMin < col.mStartMin) {
-            dur = dur - (col.mStartMin - startMin);
-            startMin = col.mStartMin;
+    this.getOrCreateWeatherBox = function(mozdate, day_col ){
+        if(day_col == undefined) {
+            let date_entry = self.view.findColumnForDate(mozdate);
+            if(!date_entry) {
+                return;
+            }
+            day_col = date_entry.column;
+            if(!day_col) {
+                return;
+            }
         }
-        if(startMin + dur > col.mEndMin){
-            log("too late "+startMin+" "+ dur);
-            if(startMin > col.mEndMin)
-                return null;
-            dur = col.mEndMin-startMin;
+
+        try{
+            let weatherbox = params.document_ref.getAnonymousElementByAttribute(day_col,"anonid","weatherbox");
+            if(weatherbox == undefined){
+                weatherbox = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
+                let orient = day_col.getAttribute("orient");
+                weatherbox.setAttribute("orient", orient);
+                weatherbox.setAttribute("flex", "1");
+                weatherbox.setAttribute("anonid", "weatherbox");
+                //weatherbox.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(\"http://openweathermap.org/img/w/02d.png\") !important; background-size: contain !important;");
+
+                let stack = params.document_ref.getAnonymousElementByAttribute(day_col,"anonid","boxstack");
+                stack.insertBefore(weatherbox, day_col.topbox);
+            }
+            return weatherbox
+        }catch(ex){
+            log("getOrCreateWeatherBox "+ex)
         }
+    };
 
-        let weather_box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
-
+    this.makeBox = function(startMin, endMin, pixelsPerMinute, parent_orientation){
+        if(endMin <= startMin) {
+            return undefined;
+        }
+        let startPix = Math.round(startMin * pixelsPerMinute);
+        let endPix   = Math.round(endMin * pixelsPerMinute);
+        let durPix   = endPix - startPix;
         // calculate duration pixel as the difference between
         // start pixel and end pixel to avoid rounding errors.
-        let startPix = Math.round(startMin * col.pixelsPerMinute);
-        let endPix   = Math.round((startMin + dur) * col.pixelsPerMinute);
-        let durPix   = endPix - startPix;
-        durPix = durPix - 10;
-        let orient = col.topbox.getAttribute("orient");
 
-        weather_box.setAttribute("class","calendar-event-column-linebox");
-        if (orient == "vertical") {
-            weather_box.setAttribute("orient", "vertical");
-            weather_box.setAttribute("height", durPix);
+        let box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
+
+        if (parent_orientation == "vertical") {
+            box.setAttribute("orient", "vertical");
+            box.setAttribute("height", durPix);
         } else {
-            weather_box.setAttribute("orient", "horizontal");
-            weather_box.setAttribute("width", durPix);
+            box.setAttribute("orient", "horizontal");
+            box.setAttribute("width", durPix);
         }
-        return weather_box;
+        return box;
     };
 
     this.annotate = function(forecast){
         forecast.forEachFrom(cal.dateTimeToJsDate(this.view.mStartDate), function(elem){
             let mozdate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
             mozdate.isDate = true;
-            self.clearWeather(mozdate);
-            let day_col = self.view.findColumnForDate(mozdate);
-            let topbox = day_col.column.topbox;
-            let orient = day_col.column.getAttribute("orient");
-            day_col.column.topbox.setAttribute("orient", orient);
+            let day_entry = self.view.findColumnForDate(mozdate)
+            if(!day_entry) {
+                return;
+            }
+            let day_col = day_entry.column;
+            let weatherbox = self.getOrCreateWeatherBox(mozdate, day_col);
+            let orient = day_col.getAttribute("orient");
             if(elem.nestedForecast){
+                self.clearWeatherBox(weatherbox);
+                let curStartMin = day_col.mStartMin;
+                elem.nestedForecast.sort();
                 elem.nestedForecast.forEach(function (elem2){
                     let datetime = new Date(elem2.timestamp);
-                    let startMin = datetime.getHours()*60+datetime.getMinutes();
-                    let wbox = self.createWeatherBox(day_col.column, startMin, elem2.period);
-                    let icon = elem2.weather.icon;
-                    wbox.setAttribute("style", "min-width: 1px; min-height: 1px; border: 5px solid red; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
-                    day_col.column.topbox.appendChild(wbox);
+                    let mozdatetime = cal.jsDateToDateTime(datetime);
+                    let startMin = mozdatetime.hour*60+mozdatetime.minute;
+                    let endMin = startMin+elem2.period;
+
+                    if(curStartMin < startMin){
+                        let b = self.makeBox(curStartMin, startMin, day_col.pixelsPerMinute, orient); // insert a filling box
+                        weatherbox.appendChild(b);
+                        curStartMin = startMin;
+                    }
+                    if(endMin > day_col.mEndMin){
+                        endMin = day_col.mEndMin
+                    }
+
+                    let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
+                    if(box){
+                        let icon = elem2.weather.icon;
+                        box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        weatherbox.appendChild(box);
+                    }
+                    curStartMin = endMin;
                 });
             }else{
                 let icon = elem.weather.icon;
-                topbox.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                weatherbox.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
             }
         });
     };
 
-    //this.createWeatherBoxes = function(col, dur){
-    //    log("createWeatherBoxes ");
-    //    let orient = col.getAttribute("orient");
-    //    let res = [];
-    //    let theMin = col.mStartMin;
-    //    while (theMin < col.mEndMin) {
-    //        if(theMin + dur > col.mEndMin){
-    //            dur = col.mEndMin-theMin;
-    //        }
-    //        let weather_box = createXULElement("spacer");
-    //
-    //        // calculate duration pixel as the difference between
-    //        // start pixel and end pixel to avoid rounding errors.
-    //        let startPix = Math.round(theMin * col.pixelsPerMinute);
-    //        let endPix   = Math.round((theMin + dur) * col.pixelsPerMinute);
-    //        let durPix   = endPix - startPix;
-    //        if (orient == "vertical")
-    //            weather_box.setAttribute("height", durPix);
-    //        else
-    //            weather_box.setAttribute("width", durPix);
-    //        weather_box.setAttribute("style", "min-width: 1px; min-height: 1px; background-color: #000f00 !important;");
-    //        res.push(weather_box);
-    //        theMin += dur;
-    //    }
-    //    log("createWeatherBoxes DONE");
-    //    return res;
-    //};
+    this.clearWeatherBox = function(box){
+        while (box.firstChild) {
+            box.removeChild(box.firstChild);
+        }
+    };
 
-    this.clearWeather = function(date){
+    this.clearWeather = function(mozdate){
         try {
-            let date_col = this.view.findColumnForDate(date);
-            let box = date_col.column.topbox;
-            while (date_col.column.topbox.firstChild) {
-                date_col.column.topbox.removeChild(date_col.column.topbox.firstChild);
-                log("REMOVED")
+            let day_entry = self.view.findColumnForDate(mozdate);
+            if (!day_entry) {
+                return;
             }
-            date_col.column.topbox.setAttribute("style", "");
-        }catch (ex){
-            log("clearWeather"+ex);
-        };
+            let day_col = day_entry.column;
+
+            let wbox = this.getOrCreateWeatherBox(mozdate, day_col);
+            if (wbox) {
+                this.clearWeatherBox(wbox);
+                wbox.setAttribute("style", "");
+            }
+        } catch(ex){
+            log("clearWeather: "+ex)
+        }
     };
 }
 

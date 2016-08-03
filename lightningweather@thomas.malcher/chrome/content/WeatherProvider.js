@@ -74,7 +74,7 @@ function IForecast(data){
     this.granularity = undefined;
     this.storeageId = undefined;
 
-    this.toJson = function(){
+    this.toJSON = function(){
         throw "Not implemented";
     };
 
@@ -123,8 +123,8 @@ function Forecast(data){
         return "["+ self._data.reduce(function(s, e){ return s+e.timestamp+", "; },"")+"]";
     };
 
-    this.toJson = function(){
-        return JSON.stringify(this._data);
+    this.toJSON = function(){
+        return this._data;
     };
     this.forEach = function(func){
         self._data.forEach(func);
