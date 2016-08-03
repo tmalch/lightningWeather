@@ -24,12 +24,20 @@ var lightningweather = {
                                     "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))};
         for (var key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
-                lightningweather.views[key].view.addEventListener("viewloaded", lightningweather.viewloaded );
+                let weather_mod = lightningweather.views[key];
+                weather_mod.view.addEventListener("viewloaded", lightningweather.viewloaded);
+                weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.resizeHandler.bind(lightningweather, weather_mod));
             }
         }
-
         lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
         lightningweather.forecastModule.requestForecast();
+    },
+
+    resizeHandler: function(weather_mod){
+        weather_mod.clear();
+        if(lightningweather.forecast) {
+            weather_mod.annotate(lightningweather.forecast);
+        }
     },
 
     viewloaded: function(){
@@ -116,7 +124,7 @@ function teste() {
     if(weatherbox == undefined)
         stack.insertBefore(test_box, day_col.topbox);
 
-
+    document.getElementById("week-view").viewBroadcaster.addEventListener("weekviewresized", function(e){ log("RESIZED2");}, true);
 //    day_col.column.topbox.appendChild(test_box);
 
 //    c.findColumnForDate(c.today()).column.relayout();

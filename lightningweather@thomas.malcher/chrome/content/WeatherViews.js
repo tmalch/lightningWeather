@@ -22,13 +22,10 @@ function ViewWeatherModule(view) {
         });
     };
     this.annotate = function(forecast){
-        log(forecast.length+"annotate "+forecast);
-
         forecast.forEachFrom(cal.dateTimeToJsDate(self.view.startDate), function(elem){
             let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
             mozDate.isDate = true;
             if(mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
-                log("set " + elem.weather.icon + " for " + mozDate);
                 self.setWeather(mozDate, elem.weather.icon);
             }
         });
@@ -71,18 +68,8 @@ function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
     var self = this;
-    this.getOrCreateWeatherBox = function(mozdate, day_col ){
-        if(day_col == undefined) {
-            let date_entry = self.view.findColumnForDate(mozdate);
-            if(!date_entry) {
-                return;
-            }
-            day_col = date_entry.column;
-            if(!day_col) {
-                return;
-            }
-        }
 
+    this.getOrCreateWeatherBox = function(mozdate, day_col ){
         try{
             let weatherbox = params.document_ref.getAnonymousElementByAttribute(day_col,"anonid","weatherbox");
             if(weatherbox == undefined){
@@ -125,10 +112,10 @@ function HourlyViewWeatherModule(view) {
     };
 
     this.annotate = function(forecast){
-        forecast.forEachFrom(cal.dateTimeToJsDate(this.view.mStartDate), function(elem){
+        forecast.forEachFrom(cal.dateTimeToJsDate(self.view.mStartDate), function(elem){
             let mozdate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
             mozdate.isDate = true;
-            let day_entry = self.view.findColumnForDate(mozdate)
+            let day_entry = self.view.findColumnForDate(mozdate);
             if(!day_entry) {
                 return;
             }
