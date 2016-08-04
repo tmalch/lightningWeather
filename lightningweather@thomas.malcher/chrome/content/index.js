@@ -6,7 +6,7 @@ Cu.import("resource://WeatherProvider.js");
 
 params.document_ref = document;
 
-function log(msg){
+function log( msg){
     dump(msg+"\n");
 }
 
@@ -60,21 +60,40 @@ var lightningweather = {
             });
         }
     },
-
+    saveAndSet: function (forecast){
+        lightningweather.forecast = forecast;
+        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log("saved forecast into DB")});
+        let weather_mod = lightningweather.views[currentView().type];
+        weather_mod.annotate(lightningweather.forecast);
+    },
     updateForecast: function(forecast){
+
         if(!forecast){
             return;
         }
-        lightningweather.storage.get(lightningweather.forecastModule.storeageId, function(existing_forecast_data) {
-            if (existing_forecast_data) {
-                forecast.combine(new Forecast(existing_forecast_data));
-                log("combined forecasts: from storeage: "+existing_forecast_data.length+ " result: "+ forecast.length)
-            }
-            lightningweather.forecast = forecast;
-            lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log("saved forecast into DB")});
-            let weather_mod = lightningweather.views[currentView().type];
-            weather_mod.annotate(lightningweather.forecast);
-        });
+        if(lightningweather.forecast == null){
+            lightningweather.storage.get(lightningweather.forecastModule.storeageId, function(existing_forecast_data) {
+                if (existing_forecast_data) {
+                    let existing_forecast = new Forecast(existing_forecast_data);
+
+                    log("From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    log("From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+
+                    forecast.combine(existing_forecast );
+                    log("combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                }
+                lightningweather.saveAndSet(forecast);
+            });
+        }else{
+            let existing_forecast = lightningweather.forecast;
+
+            log("From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            log("From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            forecast.combine(existing_forecast );
+            log("combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+
+            lightningweather.saveAndSet(forecast);
+        }
     },
 
     update: function(){

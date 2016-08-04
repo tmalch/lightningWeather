@@ -3,8 +3,11 @@ var EXPORTED_SYMBOLS = ['OpenWeathermapModule', 'Forecast'];
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
-function log(msg){
-    dump(msg+"\n");
+function log(level, msg){
+    if(msg == undefined)
+        dump(level+"\n");
+    else if(level > 0)
+        dump(msg+"\n");
 }
 
 /*
@@ -33,9 +36,9 @@ function IForecast(data){
 
 function mergeForecastElements(e1, e2){
     if (e1 == null){
-        return Object.create(e2);
+        return e2;
     }else if(e2 == null) {
-        return Object.create(e1);
+        return e1;
     }
 
     if (e1.timestamp != e2.timestamp || e1.period != e2.period){
@@ -45,24 +48,24 @@ function mergeForecastElements(e1, e2){
     let nestedForecast = null;
     if(e1.nestedForecast != null && e2.nestedForecast != null){
         if (e2.nestedForecast.published > e1.nestedForecast.published) {
-            nestedForecast = Object.create(e2.nestedForecast);
+            nestedForecast = e2.nestedForecast;
             nestedForecast.combine(e1.nestedForecast);
         }else {
-            nestedForecast = Object.create(e1.nestedForecast);
+            nestedForecast = e1.nestedForecast;
             nestedForecast.combine(e2.nestedForecast);
         }
 
     }else if(e1.nestedForecast != null){
-        nestedForecast = Object.create(e1.nestedForecast);
+        nestedForecast = e1.nestedForecast;
     } else { // if e1 has no nested Forecast use e2's
-        nestedForecast = Object.create(e2.nestedForecast);
+        nestedForecast = e2.nestedForecast;
     }
 
     let merged = null;
     if (e1.published > e2.published){
-        merged = Object.create(e1);
+        merged = e1;
     }else{
-        merged = Object.create(e2);
+        merged = e2;
     }
     merged.nestedForecast = nestedForecast;
     return merged
@@ -105,6 +108,8 @@ function IForecast(data){
         if(!(other instanceof Forecast)){
             other = new Forecast(other);
         }
+        this.updateGranularity();
+        other.updateGranularity();
         if (other.granularity != self.granularity) {
             return;
         }
@@ -114,7 +119,6 @@ function IForecast(data){
     };
 }
 
-Forecast.prototype = Object.create(IForecast);
 function Forecast(data){
     IForecast.call(this);
     let self = this;
@@ -131,22 +135,27 @@ function Forecast(data){
     };
 
     this.add = function(elem){
-        let i = self._data.findIndex(function(e){ return (e.timestamp > elem.timestamp)});
+        let i = this._data.findIndex(function(e){ return (e.timestamp > elem.timestamp)});
         if (i === -1) { // no element in self._data is later than elem
-            if (self._data.length > 0 && self._data[self._data.length-1].timestamp == elem.timestamp){  // last element of self._data can be equal
-                elem = mergeForecastElements(self._data[self._data.length-1], elem);
-                self._data[self._data.length-1] = elem;
+            if (this._data.length > 0 && this._data[this._data.length-1].timestamp == elem.timestamp){  // last element of self._data can be equal
+                log(0,"merge last "+new Date(this._data[this._data.length-1].timestamp)+" with "+new Date(elem.timestamp));
+                elem = mergeForecastElements(this._data[this._data.length-1], elem);
+                this._data[this._data.length-1] = elem;
             }else{  // all elements are earlier
-                self._data.push(elem);
+                log(0,"append "+new Date(elem.timestamp));
+                this._data.push(elem);
             }
         }else if (i === 0){ // all elements in self._data are later than elem
-            self._data.splice(0, 0, elem);
+            log(0,"prepend "+new Date(elem.timestamp)+" to "+new Date(this._data[0].timestamp));
+            this._data.splice(0, 0, elem);
         }else if (i > 0){
-            if (self._data[i-1].timestamp == elem.timestamp){
-                elem = mergeForecastElements(self._data[i-1], elem);
-                self._data[i-1] = elem;
+            if (this._data[i-1].timestamp == elem.timestamp){
+                log(0,"merge "+new Date(this._data[i-1].timestamp)+" at "+(i-1)+" with "+new Date(elem.timestamp));
+                elem = mergeForecastElements(this._data[i-1], elem);
+                this._data[i-1] = elem;
             }else {
-                self._data.splice(i, 0, elem);
+                log(0,"insert "+new Date(elem.timestamp));
+                this._data.splice(i, 0, elem);
             }
         }
     };
@@ -183,17 +192,28 @@ function Forecast(data){
     };
 
     if (data == null || !Array.isArray(data)){
-        this._data = [];
+        if( this._data == null)
+            this._data = [];
     }else{
         this._data = data;
     }
     this.sort();
-    if(this._data.length > 0)
-        this.granularity = this._data.every(e => (e.period == self._data[0].period)) ? self._data[0].period : -1;
-    else
-        this.granularity = -1;
+    this.updateGranularity = function(){
+        if(this._data.length == 0)
+            log(0,"HOWWWWWWWW length "+ this._data.length);
+        if(this._data.length > 0 && this._data[0].period == undefined){
+            log(0,"HOWWWWWWWW period"+ this._data[0].period);
+        }
+        if(this._data.length > 0 && this._data[0].period != undefined){
+            this.granularity = this._data.every(e => (e.period == this._data[0].period)) ? this._data[0].period : -1;
+        } else {
+            this.granularity = -1;
+        }
+    };
+    this.updateGranularity();
 
 }
+Forecast.prototype = new IForecast();
 
 function OpenWeathermapModule(city, callback) {
 //http://api.openweathermap.org/data/2.5/forecast?id=2778067&APPID=c43ae0077ff0a3d68343555c23b97f5f
@@ -217,7 +237,7 @@ function OpenWeathermapModule(city, callback) {
     this.parseForecast = function(event) {
         let response = JSON.parse(event.currentTarget.responseText);
         if(response.cod != 200){
-            log("ERROR: "+event.currentTarget.responseText);
+            log(1,"ERROR: "+event.currentTarget.responseText);
             return;
         }
         let list = response.list.map(function(elem){
@@ -245,7 +265,7 @@ function OpenWeathermapModule(city, callback) {
 
         let daily_forecasts = new Forecast();
         grouped_forecast.forEach(function(hourly_forecasts, date){
-            log(new Date(date)+" has "+ hourly_forecasts.length+" forecasts");
+            log(0,new Date(date)+" has "+ hourly_forecasts.length+" forecasts");
             hourly_forecasts = hourly_forecasts.map(function(e){
                 return {timestamp: e.timestamp,
                         period:e.period ,
