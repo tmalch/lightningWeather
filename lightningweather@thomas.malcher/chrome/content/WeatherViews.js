@@ -145,7 +145,7 @@ function HourlyViewWeatherModule(view) {
                     if(box){
                         let icon = elem2.weather.icon;
                         box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
-                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         weatherbox.appendChild(box);
                     }
                     curStartMin = endMin;

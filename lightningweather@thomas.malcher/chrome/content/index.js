@@ -6,8 +6,11 @@ Cu.import("resource://WeatherProvider.js");
 
 params.document_ref = document;
 
-function log( msg){
-    dump(msg+"\n");
+function log(level, msg){
+    if(msg == undefined)
+        dump(level+"\n");
+    else if(level > 0)
+        dump(msg+"\n");
 }
 
 
@@ -18,7 +21,7 @@ var lightningweather = {
     forecast: null,
 
     onLoad: function(){
-        lightningweather.views = {  "day": new WeekViewWeatherModule(document.getElementById("day-view")),
+        lightningweather.views = {  "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
                                     "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
                                     "month": new MonthViewWeatherModule(document.getElementById("month-view")),
                                     "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))};
@@ -35,8 +38,10 @@ var lightningweather = {
 
     resizeHandler: function(weather_mod){
         weather_mod.clear();
-        if(lightningweather.forecast) {
+        if(lightningweather.forecast instanceof Forecast) {
             weather_mod.annotate(lightningweather.forecast);
+        }else{
+            log(1,"resizeHandler no forecast available");
         }
     },
 
@@ -45,16 +50,16 @@ var lightningweather = {
         let weather_mod = lightningweather.views[currentView().type];
         weather_mod.clear();
 
-        if(lightningweather.forecast){
+        if(lightningweather.forecast instanceof Forecast){
             weather_mod.annotate(lightningweather.forecast);
         }else{ // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId , function(forecast_data){
                 if(forecast_data){
-                    log("found forecast in Storage "+forecast_data.length);
+                    log(1,"found forecast in Storage "+forecast_data.length);
                     lightningweather.forecast = new Forecast(forecast_data);
                     weather_mod.annotate(lightningweather.forecast);
                 }else{ // no forecast in object or storage -> request
-                    log("No forecast in Storage! request new one");
+                    log(1,"No forecast in Storage! request new one");
                     lightningweather.forecastModule.requestForecast();
                 }
             });
@@ -62,7 +67,7 @@ var lightningweather = {
     },
     saveAndSet: function (forecast){
         lightningweather.forecast = forecast;
-        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log("saved forecast into DB")});
+        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log(0,"saved forecast into DB")});
         let weather_mod = lightningweather.views[currentView().type];
         weather_mod.annotate(lightningweather.forecast);
     },
@@ -76,21 +81,21 @@ var lightningweather = {
                 if (existing_forecast_data) {
                     let existing_forecast = new Forecast(existing_forecast_data);
 
-                    log("From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-                    log("From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
                     forecast.combine(existing_forecast );
-                    log("combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
                 }
                 lightningweather.saveAndSet(forecast);
             });
         }else{
             let existing_forecast = lightningweather.forecast;
 
-            log("From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-            log("From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
             forecast.combine(existing_forecast );
-            log("combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
             lightningweather.saveAndSet(forecast);
         }
@@ -105,16 +110,6 @@ var lightningweather = {
         }
     }
 };
-
-
-
-
-
-// returns if given view is currently visible in the gui
-// viewname: "day-view" | "week-view" | "month-view"
-function isViewVisible(viewname){
-    document.getElementById(viewname).isVisible()
-}
 
 
 window.addEventListener("load", lightningweather.onLoad , false);
