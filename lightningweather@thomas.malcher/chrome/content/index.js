@@ -32,7 +32,9 @@ var lightningweather = {
                 weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.resizeHandler.bind(lightningweather, weather_mod));
             }
         }
-        lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
+        //lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
+
+        lightningweather.forecastModule = new YahooWeatherModule("548536", lightningweather.updateForecast);
         lightningweather.forecastModule.requestForecast();
     },
 
@@ -81,21 +83,21 @@ var lightningweather = {
                 if (existing_forecast_data) {
                     let existing_forecast = new Forecast(existing_forecast_data);
 
-                    log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-                    log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
                     forecast.combine(existing_forecast );
-                    log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+                    //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
                 }
                 lightningweather.saveAndSet(forecast);
             });
         }else{
             let existing_forecast = lightningweather.forecast;
 
-            log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-            log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
             forecast.combine(existing_forecast );
-            log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
+            //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
             lightningweather.saveAndSet(forecast);
         }

@@ -1,5 +1,5 @@
 
-var EXPORTED_SYMBOLS = ['OpenWeathermapModule', 'Forecast'];
+var EXPORTED_SYMBOLS = ['OpenWeathermapModule','YahooWeatherModule', 'Forecast'];
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
@@ -281,3 +281,35 @@ function OpenWeathermapModule(city, callback) {
     };
 }
 
+function YahooWeatherModule(city, callback) {
+    this.callback = callback;
+    this.city_woeid = city;
+    this.baseurl = "https://query.yahooapis.com/v1/public/yql"
+    this.storeageId = "openweather"+this.city_id;
+
+    this.requestForecast = function(){
+        let q = "?q=select item.forecast from weather.forecast where woeid = \""+this.city_woeid+"\" and u = \"c\"&format=json"
+        let oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", this.parseForecast.bind(this));
+        oReq.open("GET", this.baseurl+q);
+        oReq.send();
+    };
+
+    this.parseForecast = function(event){
+        let response = JSON.parse(event.currentTarget.responseText);
+        if(response.error != undefined){
+            log(1,"ERROR: "+event.currentTarget.responseText);
+            return;
+        }
+        let daily_forecasts_data = response.query.results.channel.map(function(elem){
+            let forecast_elem = elem.item.forecast;
+            let date = new Date(forecast_elem.date);
+            return {date: date,
+                    timestamp: date.getTime(),
+                    period:24*60,
+                    weather:{text:forecast_elem.text, icon: "https://s.yimg.com/zz/combo?a/i/us/nws/weather/gr/"+forecast_elem.code+"d.png"},
+                    published: Date.now()}
+        });
+        this.callback(new Forecast(daily_forecasts_data))
+    }
+}
