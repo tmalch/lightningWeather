@@ -1,12 +1,12 @@
 
-var EXPORTED_SYMBOLS = ['OpenWeathermapModule','YahooWeatherModule', 'Forecast'];
+var EXPORTED_SYMBOLS = ['OpenWeathermapModule','YahooWeatherModule', 'CombinedWeatherModule', 'Forecast'];
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
 function log(level, msg){
     if(msg == undefined)
         dump(level+"\n");
-    else if(level > 0)
+    else if(level >= 0)
         dump(msg+"\n");
 }
 
@@ -44,30 +44,23 @@ function mergeForecastElements(e1, e2){
     if (e1.timestamp != e2.timestamp || e1.period != e2.period){
         return;
     }
-    // merge nested Forecast if exists
-    let nestedForecast = null;
-    if(e1.nestedForecast != null && e2.nestedForecast != null){
-        if (e2.nestedForecast.published > e1.nestedForecast.published) {
-            nestedForecast = e2.nestedForecast;
-            nestedForecast.combine(e1.nestedForecast);
-        }else {
-            nestedForecast = e1.nestedForecast;
-            nestedForecast.combine(e2.nestedForecast);
-        }
 
-    }else if(e1.nestedForecast != null){
-        nestedForecast = e1.nestedForecast;
-    } else { // if e1 has no nested Forecast use e2's
-        nestedForecast = e2.nestedForecast;
-    }
-
-    let merged = null;
+    let merged, other = null;
     if (e1.published > e2.published){
         merged = e1;
+        other = e2;
     }else{
         merged = e2;
+        other = e1;
     }
-    merged.nestedForecast = nestedForecast;
+
+    // merge nested Forecast if exists
+    let nestedForecast = null;
+    if(merged.nestedForecast != null && other.nestedForecast != null){
+        merged.nestedForecast.combine(other.nestedForecast);
+    }else if(merged.nestedForecast == null){ // if newer has no nested Forecast use the one from older element
+        merged.nestedForecast = other.nestedForecast;
+    }
     return merged
 };
 
@@ -91,13 +84,15 @@ var IForecast = {
             other.updateGranularity();
             this.updateGranularity();
 
-            if (other.granularity != this.granularity) {
+            if (other.granularity != undefined && this.granularity != undefined && other.granularity != this.granularity) {
                 log("cannot combine, granularity is different "+ other.granularity+" != "+this.granularity);
                 return;
             }
             other.forEach(function(elem){
                 this.add(elem);
             }.bind(this));
+
+            this.updateGranularity();
         },
     add: function(elem){
             let i = this._data.findIndex(function(e){ return (e.timestamp > elem.timestamp)});
@@ -155,22 +150,29 @@ var IForecast = {
     setData: function (data) {
             if (data != null && Array.isArray(data)){
                 this._data = data;
+                this._data.forEach(function(elem){
+                    if(elem.nestedForecast != null && typeof elem.nestedForecast != Forecast) {
+                        elem.nestedForecast = new Forecast(elem.nestedForecast);
+                    }
+                });
                 this.sort();
                 this.updateGranularity();
             }else{
-                log(1, "not valid data "+data)
+                log(1, "setData: not valid data "+data)
             }
         },
 
     updateGranularity: function(){
-            if(this._data.length > 0 && this._data[0].period != undefined){
+            if(this._data.length == 0) {
+                this.granularity = undefined;
+            } else if(this._data.length > 0 && this._data[0].period != undefined){
                 this.granularity = this._data.every(e => (e.period == this._data[0].period)) ? this._data[0].period : -1;
             } else {
                 this.granularity = -1;
             }
         },
     toString: function(){
-            return "["+ self._data.reduce(function(s, e){ return s+e.timestamp+", "; },"")+"]";
+            return "["+ this._data.reduce(function(s, e){ return s+e.timestamp+", "; },"Forecast: ")+"]";
         },
 
     toJSON: function(){
@@ -182,7 +184,6 @@ function Forecast(data){
 
     let self = this;
     this.granularity = undefined;
-    this.storeageId = undefined;
     this._data = [];
 
     Object.defineProperties(this, {
@@ -285,7 +286,7 @@ function YahooWeatherModule(city, callback) {
     this.callback = callback;
     this.city_woeid = city;
     this.baseurl = "https://query.yahooapis.com/v1/public/yql"
-    this.storeageId = "openweather"+this.city_id;
+    this.storeageId = "yahoo"+this.city_woeid;
 
     this.requestForecast = function(){
         let q = "?q=select item.forecast from weather.forecast where woeid = \""+this.city_woeid+"\" and u = \"c\"&format=json"
@@ -313,3 +314,42 @@ function YahooWeatherModule(city, callback) {
         this.callback(new Forecast(daily_forecasts_data))
     }
 }
+CombinedWeatherModule.prototype.requestForecast = function(){
+    //reset forecast_cache
+    this.forecast_cache  = new Map(this.modules.map(m => [m.storeageId, null]));
+    for(let module of this.modules){
+        module.requestForecast();
+    }
+};
+CombinedWeatherModule.prototype.dummycallback = function(module, forecast){
+    this.forecast_cache.set(module.storeageId, forecast);
+
+    let all_modules_done = true;
+    for(let f of this.forecast_cache.values()){
+        if(f == null){
+            all_modules_done = false;
+        }
+    }
+    if(all_modules_done){
+        let combined_forecast = new Forecast([]);
+        for(let forecast of this.forecast_cache.values()){
+            combined_forecast.combine(forecast);
+        }
+        this.callback(combined_forecast)
+    }
+};
+
+function CombinedWeatherModule(city, submodules, callback) {
+    this.callback = callback;
+
+    this.modules = submodules;
+    this.city_id = city;
+    this.storeageId = "combined"+this.city_id;
+    this.forecast_cache = undefined;
+
+
+    for(let module of this.modules){
+        module.callback = this.dummycallback.bind(this, module);
+    }
+}
+

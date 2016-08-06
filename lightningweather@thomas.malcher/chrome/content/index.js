@@ -33,8 +33,8 @@ var lightningweather = {
             }
         }
         //lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
-
-        lightningweather.forecastModule = new YahooWeatherModule("548536", lightningweather.updateForecast);
+        let m = [new OpenWeathermapModule(2778067, lightningweather.updateForecast), new YahooWeatherModule("548536", lightningweather.updateForecast)];
+        lightningweather.forecastModule = new CombinedWeatherModule("Graz", m,lightningweather.updateForecast);
         lightningweather.forecastModule.requestForecast();
     },
 
