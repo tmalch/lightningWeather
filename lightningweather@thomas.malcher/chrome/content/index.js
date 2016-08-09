@@ -2,14 +2,16 @@
 
 Cu.import("resource://SimpleStorage.js");
 Cu.import("resource://WeatherViews.js");
-Cu.import("resource://WeatherProvider.js");
+var weatherProviders = {};
+Components.utils.import("resource://WeatherProvider.js", weatherProviders);
+var Forecast = weatherProviders.Forecast;
 
 params.document_ref = document;
 
 function log(level, msg){
     if(msg == undefined)
         dump(level+"\n");
-    else if(level > 0)
+    else if(level >= 0)
         dump(msg+"\n");
 }
 
@@ -19,8 +21,35 @@ var lightningweather = {
     storage: SimpleStorage.createCpsStyle("teste"),
     forecastModule: null,
     forecast: null,
+    prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
 
+    prefObserver: {
+        observe: function(subject,topic,data)
+        {
+            log(0,"subject: "+subject+" topic: "+topic+" pref: "+data);
+            if (topic != "nsPref:changed") return;
+            if(data == "provider"){
+                let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
+                if(provider_instance_description){
+                    lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
+                    lightningweather.forecast = null;
+                    lightningweather.forecastModule.requestForecast();
+                    log(0,"Prefs Use WeatherModule: "+provider_instance_description.provider_name+" "+provider_instance_description.city_id);
+                }
+            }
+        }
+    },
+    createWeatherModule: function(provider_name, city_id){
+        for(let provider in weatherProviders){
+            if( weatherProviders.hasOwnProperty( provider ) && weatherProviders[provider].class == provider_name) {
+                return new weatherProviders[provider](city_id, lightningweather.updateForecast);
+            }
+        }
+        return undefined;
+    },
     onLoad: function(){
+        lightningweather.prefs.addObserver("",lightningweather.prefObserver, false);
+
         lightningweather.views = {  "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
                                     "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
                                     "month": new MonthViewWeatherModule(document.getElementById("month-view")),
@@ -33,9 +62,18 @@ var lightningweather = {
             }
         }
         //lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
-        let m = [new OpenWeathermapModule(2778067, lightningweather.updateForecast), new YahooWeatherModule("548536", lightningweather.updateForecast)];
-        lightningweather.forecastModule = new CombinedWeatherModule("Graz", m,lightningweather.updateForecast);
-        lightningweather.forecastModule.requestForecast();
+        //let m = [new OpenWeathermapModule(2778067, lightningweather.updateForecast), new YahooWeatherModule("548536", lightningweather.updateForecast)];
+        //lightningweather.forecastModule = new CombinedWeatherModule("Graz", m,lightningweather.updateForecast);
+        try{
+            let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
+            lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
+            lightningweather.forecastModule.requestForecast();
+            log(0,"Init Use WeatherModule: "+provider_instance_description.provider_name+" "+provider_instance_description.city_id);
+        }catch(e){
+            lightningweather.forecastModule = lightningweather.createWeatherModule("yahoo", "548536");
+            log(0,"Init Use default WeatherModule: yahoo 548536");
+            lightningweather.forecastModule.requestForecast();
+        }
     },
 
     resizeHandler: function(weather_mod){
@@ -74,7 +112,6 @@ var lightningweather = {
         weather_mod.annotate(lightningweather.forecast);
     },
     updateForecast: function(forecast){
-
         if(!forecast){
             return;
         }

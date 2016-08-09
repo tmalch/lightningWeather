@@ -6,7 +6,7 @@ const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttpre
 function log(level, msg){
     if(msg == undefined)
         dump(level+"\n");
-    else if(level >= 0)
+    else if(level > 0)
         dump(msg+"\n");
 }
 
@@ -151,7 +151,7 @@ var IForecast = {
             if (data != null && Array.isArray(data)){
                 this._data = data;
                 this._data.forEach(function(elem){
-                    if(elem.nestedForecast != null && typeof elem.nestedForecast != Forecast) {
+                    if(elem.nestedForecast != null && !(elem.nestedForecast instanceof Forecast)) {
                         elem.nestedForecast = new Forecast(elem.nestedForecast);
                     }
                 });
@@ -203,7 +203,8 @@ function OpenWeathermapModule(city, callback) {
     this.callback = callback;
     this.city_id = city;
     this.baseurl = "http://openweathermap.org/img/w/";
-    this.storeageId = "openweather"+this.city_id;
+
+    this.storeageId = OpenWeathermapModule.class+this.city_id;
     var self = this;
 
     this.requestForecast = function(){
@@ -281,12 +282,30 @@ function OpenWeathermapModule(city, callback) {
         this.callback(new Forecast(daily_forecasts_data))
     };
 }
+OpenWeathermapModule.class = "openweather";
+OpenWeathermapModule.locations = function(user_text, callback){
+    let oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", OpenWeathermapModule.parseLocation.bind(this, callback));
+    oReq.open("GET", "http://api.openweathermap.org/data/2.5/weather?q="+user_text+"&APPID=c43ae0077ff0a3d68343555c23b97f5f");
+    oReq.send();
+};
+OpenWeathermapModule.parseLocation = function(callback, event){
+    let response = JSON.parse(event.currentTarget.responseText);
+    if(response.cod != 200){
+        log(1,"ERROR: "+event.currentTarget.responseText);
+        return;
+    }
+    let coord = response.sys.coord;
+    let name = response.name+", "+response.sys.country;
+    callback([[name,response.id]]);
+};
 
+YahooWeatherModule.class = "yahoo";
 function YahooWeatherModule(city, callback) {
     this.callback = callback;
     this.city_woeid = city;
-    this.baseurl = "https://query.yahooapis.com/v1/public/yql"
-    this.storeageId = "yahoo"+this.city_woeid;
+    this.baseurl = "https://query.yahooapis.com/v1/public/yql";
+    this.storeageId = YahooWeatherModule.class+this.city_woeid;
 
     this.requestForecast = function(){
         let q = "?q=select item.forecast from weather.forecast where woeid = \""+this.city_woeid+"\" and u = \"c\"&format=json"
@@ -302,7 +321,9 @@ function YahooWeatherModule(city, callback) {
             log(1,"ERROR: "+event.currentTarget.responseText);
             return;
         }
-        let daily_forecasts_data = response.query.results.channel.map(function(elem){
+        let results = response.query.results || [];
+
+        let daily_forecasts_data = results.channel.map(function(elem){
             let forecast_elem = elem.item.forecast;
             let date = new Date(forecast_elem.date);
             return {date: date,
@@ -314,6 +335,44 @@ function YahooWeatherModule(city, callback) {
         this.callback(new Forecast(daily_forecasts_data))
     }
 }
+YahooWeatherModule.locations = function(user_text, callback){
+    let q = "?q=select woeid, name, country, admin1,admin2,admin3, centroid from geo.places where text = \""+user_text+"\" and placeTypeName = \"Town\"&format=json"
+    let oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", YahooWeatherModule.parseLocation.bind(this, callback));
+    oReq.open("GET", "https://query.yahooapis.com/v1/public/yql"+q);
+    oReq.send();
+};
+YahooWeatherModule.parseLocation = function(callback, event){
+    let response = JSON.parse(event.currentTarget.responseText);
+    if(response.error != undefined){
+        log(1,"ERROR: "+event.currentTarget.responseText);
+        return callback([]);
+    }
+    if(response.query.results == null){
+        return callback([]);
+    }
+
+    let places = response.query.results.place;
+    if(!Array.isArray(places)){
+        places = [places];
+    }
+    let hitting_locations = places.map(function(place) {
+        let name = place.name + "," + place.country.code;
+
+        let hierarchy = [place.admin1, place.admin2, place.admin3].map(e => (e != null) ? e.content : "").join("|");
+        if(hierarchy.length > 0)
+            name = name +" ["+hierarchy+")";
+
+        return [name, place.woeid]
+    });
+    callback(hitting_locations);
+};
+
+
+
+
+
+
 CombinedWeatherModule.prototype.requestForecast = function(){
     //reset forecast_cache
     this.forecast_cache  = new Map(this.modules.map(m => [m.storeageId, null]));
@@ -321,6 +380,7 @@ CombinedWeatherModule.prototype.requestForecast = function(){
         module.requestForecast();
     }
 };
+
 CombinedWeatherModule.prototype.dummycallback = function(module, forecast){
     this.forecast_cache.set(module.storeageId, forecast);
 
@@ -339,12 +399,13 @@ CombinedWeatherModule.prototype.dummycallback = function(module, forecast){
     }
 };
 
+CombinedWeatherModule.class = "combined";
 function CombinedWeatherModule(city, submodules, callback) {
     this.callback = callback;
 
     this.modules = submodules;
     this.city_id = city;
-    this.storeageId = "combined"+this.city_id;
+    this.storeageId = CombinedWeatherModule.class+this.city_id;
     this.forecast_cache = undefined;
 
 

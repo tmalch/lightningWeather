@@ -8,7 +8,7 @@
     <em:name>lightningweather</em:name>
     <em:version>1.0</em:version>
     <em:creator>thomas malcher</em:creator>
-   
+   <em:optionsURL>chrome://lightningweather/content/preferencesWindow.xul</em:optionsURL>
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
