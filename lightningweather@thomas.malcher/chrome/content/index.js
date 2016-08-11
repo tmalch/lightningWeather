@@ -9,11 +9,12 @@ var Forecast = weatherProviders.Forecast;
 params.document_ref = document;
 
 function log(level, msg){
-    if(msg == undefined)
-        dump(level+"\n");
-    else if(level >= 0)
+    if(arguments.length == 1)
+        dump(arguments[0]+"\n");
+    else if(level > 0)
         dump(msg+"\n");
 }
+
 
 
 var lightningweather = {
@@ -152,7 +153,7 @@ var lightningweather = {
 
 
 window.addEventListener("load", lightningweather.onLoad , false);
-window.setInterval(lightningweather.update, 10000);
+window.setInterval(lightningweather.update, 5*60*1000);
 
 //window.addEventListener("load", teste , false);
 //window.setInterval(teste, 6000);

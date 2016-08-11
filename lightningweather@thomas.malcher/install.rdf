@@ -6,16 +6,23 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>lightningweather@thomas.malcher</em:id>
     <em:name>lightningweather</em:name>
-    <em:version>1.0</em:version>
+    <em:version>0.1a</em:version>
     <em:creator>thomas malcher</em:creator>
-   <em:optionsURL>chrome://lightningweather/content/preferencesWindow.xul</em:optionsURL>
+    <em:description>show weather forecast in background of Lightning Calendar</em:description>
+    <em:optionsURL>chrome://lightningweather/content/preferencesWindow.xul</em:optionsURL>
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
         <em:minVersion>1.5</em:minVersion>
-        <em:maxVersion>5.0.*</em:maxVersion>
+        <em:maxVersion>45.*</em:maxVersion>
       </Description>
     </em:targetApplication>
-   
+   <em:requires><!-- Lightning -->
+			<Description>
+				<em:id>{e2fda1a4-762b-4020-b5ad-a41df1933103}</em:id>
+				<em:minVersion>1.0b2</em:minVersion>
+				<em:maxVersion>4.*</em:maxVersion>
+			</Description>
+		</em:requires>
   </Description>      
 </RDF>

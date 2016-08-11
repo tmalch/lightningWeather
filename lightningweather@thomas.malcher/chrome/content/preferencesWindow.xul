@@ -22,7 +22,7 @@
     <prefpane id="sw2-stock-pane" label="Stock Settings">
 
         <hbox align="center">
-            <label control="location_query" value="blabla"/>
+            <label control="location_query" value="Location:"/>
             <textbox id="location_query" maxlength="20" oninput="lightningweather_prefs.locationQueryChanged(event);" preference="query"/>
         </hbox>
         <menulist id="provider_list" oncommand="lightningweather_prefs.providerSelected(event)">
@@ -33,7 +33,7 @@
         <listbox id="location_list" seltype="single" onselect="lightningweather_prefs.locationSelected(event);">
         </listbox>
 
-        <tooltip id="error_msg_container" orient="vertical" style="background-color: #33DD00;">
+        <tooltip id="error_msg_container" style="background-color: #33DD00;">
         </tooltip>
 <!--        <tree id="elementList" flex="1" height="100%" seltype="multiple" onclick="lightningweather_prefs.sourceTree.onClick(event)" onselect="lightningweather_prefs.sourceTree.onSelect();">
             <treecols>

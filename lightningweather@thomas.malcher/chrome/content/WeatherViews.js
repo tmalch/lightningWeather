@@ -3,12 +3,15 @@ Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule', 'HourlyViewWeatherModule', "params"];
 
-params = {
+var params = {
     document_ref: this
 };
 
-function log(msg){
-    dump(msg+"\n");
+function log(level, msg){
+    if(arguments.length == 1)
+        dump(arguments[0]+"\n");
+    else if(level > 0)
+        dump(msg+"\n");
 }
 
 function ViewWeatherModule(view) {
@@ -40,14 +43,13 @@ function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     this.type = "week";
 
-
     this.setWeather = function(mozdate, icon){
         try {
             let day_col = this.view.findColumnForDate(mozdate);
             let orient = day_col.column.getAttribute("orient");
             let box = day_col.column.topbox;
             box.setAttribute("orient", orient);
-            box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+            box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
         }catch (ex){
             log("setWeather: "+ex);
         }
@@ -144,15 +146,15 @@ function HourlyViewWeatherModule(view) {
                     let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
                     if(box){
                         let icon = elem2.weather.icon;
-                        box.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
-                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                        //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         weatherbox.appendChild(box);
                     }
                     curStartMin = endMin;
                 });
             }else{
                 let icon = elem.weather.icon;
-                weatherbox.setAttribute("style", "background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                weatherbox.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
             }
         });
     };
@@ -191,15 +193,15 @@ function MonthViewWeatherModule(view) {
     this.setWeather = function(mozdate, icon){
         try {
             let day_box = self.view.findDayBoxForDate(mozdate);
-            day_box.setAttribute("style", "background-image: url(\"" + icon  + "\") !important; background-size: contain !important;");
+            day_box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon  + "\") !important; background-size: contain !important;");
         }catch (ex){
             log(ex)
-        };
+        }
     };
     this.clearWeather = function(mozdate){
         try {
             let day_box = self.view.findDayBoxForDate(mozdate);
             day_box.setAttribute("style", "");
-        }catch (ex){};
+        }catch (ex){}
     };
 }

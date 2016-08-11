@@ -4,9 +4,9 @@ var providers = {};
 Components.utils.import("resource://WeatherProvider.js", providers);
 
 function log(level, msg){
-    if(msg == undefined)
-        dump(level+"\n");
-    else if(level >= 0)
+    if(arguments.length == 1)
+        dump(arguments[0]+"\n");
+    else if(level > 0)
         dump(msg+"\n");
 }
 
@@ -184,7 +184,9 @@ lightningweather_prefs = {
         while(count-- > 0){
             this.location_list.removeItemAt(0);
         }
-        if(locations.length == 0){
+        if(locations == undefined){
+            this.location_list.appendItem("error occured", NO_RESULTS_VALUE);
+        }else if(locations.length == 0){
             this.location_list.appendItem("no results", NO_RESULTS_VALUE);
         }else{
             locations.forEach(e => this.location_list.appendItem(e[0], e[1]));
@@ -221,7 +223,7 @@ lightningweather_prefs = {
                 error_msg_elem.openPopup(this.location_list);
             }
 
-            document.setTimeout(function(){error_msg_elem.hidePopup()}, 1000);
+            window.setTimeout(function(){error_msg_elem.hidePopup()}, 1000);
             return false;
         }
     }
