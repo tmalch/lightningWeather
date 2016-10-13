@@ -1,5 +1,3 @@
-
-
 Cu.import("resource://SimpleStorage.js");
 Cu.import("resource://WeatherViews.js");
 var weatherProviders = {};
@@ -8,13 +6,12 @@ var Forecast = weatherProviders.Forecast;
 
 params.document_ref = document;
 
-function log(level, msg){
-    if(arguments.length == 1)
-        dump(arguments[0]+"\n");
-    else if(level > 0)
-        dump(msg+"\n");
+function log(level, msg) {
+    if (arguments.length == 1)
+        dump(arguments[0] + "\n");
+    else if (level > 0)
+        dump(msg + "\n");
 }
-
 
 
 var lightningweather = {
@@ -25,36 +22,38 @@ var lightningweather = {
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
 
     prefObserver: {
-        observe: function(subject,topic,data)
-        {
-            log(0,"subject: "+subject+" topic: "+topic+" pref: "+data);
+        observe: function (subject, topic, data) {
+            log(0, "subject: " + subject + " topic: " + topic + " pref: " + data);
             if (topic != "nsPref:changed") return;
-            if(data == "provider"){
+            if (data == "provider") { // if user selected a new Provider
                 let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
-                if(provider_instance_description){
+                if (provider_instance_description) {
                     lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
                     lightningweather.forecast = null;
+                    //\\ get or load and request
                     lightningweather.forecastModule.requestForecast();
-                    log(0,"Prefs Use WeatherModule: "+provider_instance_description.provider_name+" "+provider_instance_description.city_id);
+                    log(0, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
                 }
             }
         }
     },
-    createWeatherModule: function(provider_name, city_id){
-        for(let provider in weatherProviders){
-            if( weatherProviders.hasOwnProperty( provider ) && weatherProviders[provider].class == provider_name) {
+    createWeatherModule: function (provider_name, city_id) {
+        for (let provider in weatherProviders) {
+            if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
                 return new weatherProviders[provider](city_id, lightningweather.updateForecast);
             }
         }
         return undefined;
     },
-    onLoad: function(){
-        lightningweather.prefs.addObserver("",lightningweather.prefObserver, false);
+    onLoad: function () {
+        lightningweather.prefs.addObserver("", lightningweather.prefObserver, false);
 
-        lightningweather.views = {  "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
-                                    "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
-                                    "month": new MonthViewWeatherModule(document.getElementById("month-view")),
-                                    "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))};
+        lightningweather.views = {
+            "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
+            "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
+            "month": new MonthViewWeatherModule(document.getElementById("month-view")),
+            "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))
+        };
         for (var key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
                 let weather_mod = lightningweather.views[key];
@@ -62,98 +61,103 @@ var lightningweather = {
                 weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.resizeHandler.bind(lightningweather, weather_mod));
             }
         }
-        //lightningweather.forecastModule = new OpenWeathermapModule(2778067, lightningweather.updateForecast);
-        //let m = [new OpenWeathermapModule(2778067, lightningweather.updateForecast), new YahooWeatherModule("548536", lightningweather.updateForecast)];
-        //lightningweather.forecastModule = new CombinedWeatherModule("Graz", m,lightningweather.updateForecast);
-        try{
+
+        try {
             let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
             lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
-            lightningweather.forecastModule.requestForecast();
-            log(0,"Init Use WeatherModule: "+provider_instance_description.provider_name+" "+provider_instance_description.city_id);
-        }catch(e){
+            log(0, "Init Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
+        } catch (e) {
             lightningweather.forecastModule = lightningweather.createWeatherModule("yahoo", "548536");
-            log(0,"Init Use default WeatherModule: yahoo 548536");
-            lightningweather.forecastModule.requestForecast();
+            log(0, "Init Use default WeatherModule: yahoo 548536");
         }
+        //\\ get or load and request
+        lightningweather.forecastModule.requestForecast();
     },
 
-    resizeHandler: function(weather_mod){
+    resizeHandler: function (weather_mod) {
+        //\\get or load or request then clear and annotate
         weather_mod.clear();
-        if(lightningweather.forecast instanceof Forecast) {
+        if (lightningweather.forecast instanceof Forecast) {
             weather_mod.annotate(lightningweather.forecast);
-        }else{
-            log(1,"resizeHandler no forecast available");
+        } else {
+            log(1, "resizeHandler: no forecast available");
         }
     },
 
-    viewloaded: function(){
-        dump("loaded view "+ currentView().type);
+    viewloaded: function () {
+        //\\get or load or request then clear and annotate
+        log(0, "loaded view " + currentView().type);
         let weather_mod = lightningweather.views[currentView().type];
-        weather_mod.clear();
 
-        if(lightningweather.forecast instanceof Forecast){
+        if (lightningweather.forecast instanceof Forecast) {
+            weather_mod.clear();
             weather_mod.annotate(lightningweather.forecast);
-        }else{ // check storage
-            lightningweather.storage.get(lightningweather.forecastModule.storeageId , function(forecast_data){
-                if(forecast_data){
-                    log(1,"found forecast in Storage "+forecast_data.length);
+        } else { // check storage
+            lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
+                if (forecast_data) {
+                    log(0, "found forecast in Storage " + forecast_data.length);
                     lightningweather.forecast = new Forecast(forecast_data);
+                    weather_mod.clear();
                     weather_mod.annotate(lightningweather.forecast);
-                }else{ // no forecast in object or storage -> request
-                    log(1,"No forecast in Storage! request new one");
+                } else { // no forecast in object or storage -> request
+                    log(0, "No forecast in Storage! request new one");
                     lightningweather.forecastModule.requestForecast();
                 }
             });
         }
     },
-    saveAndSet: function (forecast){
+
+    saveAndSet: function (forecast) {
         lightningweather.forecast = forecast;
-        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function(k){ log(0,"saved forecast into DB")});
+        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function (k) {
+            log(0, "saved forecast into DB")
+        });
         let weather_mod = lightningweather.views[currentView().type];
+        weather_mod.clear();
         weather_mod.annotate(lightningweather.forecast);
     },
-    updateForecast: function(forecast){
-        if(!forecast){
+
+    updateForecast: function (forecast) {
+        if (!forecast) {
             return;
         }
-        if(lightningweather.forecast == null){
-            lightningweather.storage.get(lightningweather.forecastModule.storeageId, function(existing_forecast_data) {
+        if (lightningweather.forecast == null) {
+            lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (existing_forecast_data) {
                 if (existing_forecast_data) {
                     let existing_forecast = new Forecast(existing_forecast_data);
-
                     //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
                     //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
-                    forecast.combine(existing_forecast );
+                    forecast.combine(existing_forecast);
                     //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
                 }
                 lightningweather.saveAndSet(forecast);
             });
-        }else{
+        } else {
             let existing_forecast = lightningweather.forecast;
 
             //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
             //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-            forecast.combine(existing_forecast );
+            forecast.combine(existing_forecast);
             //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
 
             lightningweather.saveAndSet(forecast);
         }
     },
 
-    update: function(){
-        if(!lightningweather.forecastModule){
+    update: function () {
+        if (!lightningweather.forecastModule) {
             lightningweather.onLoad();
         }
-        if(lightningweather.forecastModule){
+        if (lightningweather.forecastModule) {
             lightningweather.forecastModule.requestForecast();
         }
     }
 };
 
 
-window.addEventListener("load", lightningweather.onLoad , false);
-window.setInterval(lightningweather.update, 5*60*1000);
+window.addEventListener("load", lightningweather.onLoad, false);
+window.setInterval(lightningweather.update, 5 * 60 * 1000);
 
 //window.addEventListener("load", teste , false);
 //window.setInterval(teste, 6000);
@@ -171,14 +175,16 @@ function teste() {
     //day_col.column.appendChild(test_box);
 
     let w = document.getElementById("week-view");
-    let stack = document.getAnonymousElementByAttribute(day_col,"anonid","boxstack");
+    let stack = document.getAnonymousElementByAttribute(day_col, "anonid", "boxstack");
     stack.setAttribute("class", "supertollescss2");
-    let weatherbox = document.getAnonymousElementByAttribute(day_col,"anonid","weatherbox");
+    let weatherbox = document.getAnonymousElementByAttribute(day_col, "anonid", "weatherbox");
     log(weatherbox);
-    if(weatherbox == undefined)
+    if (weatherbox == undefined)
         stack.insertBefore(test_box, day_col.topbox);
 
-    document.getElementById("week-view").viewBroadcaster.addEventListener("weekviewresized", function(e){ log("RESIZED2");}, true);
+    document.getElementById("week-view").viewBroadcaster.addEventListener("weekviewresized", function (e) {
+        log("RESIZED2");
+    }, true);
 //    day_col.column.topbox.appendChild(test_box);
 
 //    c.findColumnForDate(c.today()).column.relayout();
@@ -186,21 +192,33 @@ function teste() {
     //currentView().addEventListener("dayselect", function(e){ dump(e+"\n")});
 
 
-    document.getElementById("day-view").addEventListener("viewloaded", function(e){ dump("DAYVIEW\n"); dump(this)});
-    document.getElementById("week-view").addEventListener("viewloaded", function(e){ dump("WEEKVIEW\n"); dump(this)});
-    document.getElementById("multiweek-view").addEventListener("viewloaded", function(e){ dump("MULTIWEEKVIEW\n"); dump(this)});
-    document.getElementById("month-view").addEventListener("viewloaded", function(e){ dump("MONTH\n"); dump(this)});
+    document.getElementById("day-view").addEventListener("viewloaded", function (e) {
+        dump("DAYVIEW\n");
+        dump(this)
+    });
+    document.getElementById("week-view").addEventListener("viewloaded", function (e) {
+        dump("WEEKVIEW\n");
+        dump(this)
+    });
+    document.getElementById("multiweek-view").addEventListener("viewloaded", function (e) {
+        dump("MULTIWEEKVIEW\n");
+        dump(this)
+    });
+    document.getElementById("month-view").addEventListener("viewloaded", function (e) {
+        dump("MONTH\n");
+        dump(this)
+    });
 
-	//var daybox = document.getElementById("week-view");
-	//var today_col = daybox.findColumnForDate(daybox.today());
-	//today_col.header.setAttribute("class", "supertollescss2");
+    //var daybox = document.getElementById("week-view");
+    //var today_col = daybox.findColumnForDate(daybox.today());
+    //today_col.header.setAttribute("class", "supertollescss2");
     ////ss.set("testkey","teste", function (val) {});
     //
     //let cols = document.getElementById("week-view").mDateColumns;
-	//for(var i=0;i<cols.length;i++){
-	//	if(cols[i].date != daybox.today()){
-	//		var box = document.getAnonymousElementByAttribute(cols[i].column,"anonid","topbox");
-	//		//box.setAttribute("class", "supertollescss");
-	//  }
-	//}
+    //for(var i=0;i<cols.length;i++){
+    //	if(cols[i].date != daybox.today()){
+    //		var box = document.getAnonymousElementByAttribute(cols[i].column,"anonid","topbox");
+    //		//box.setAttribute("class", "supertollescss");
+    //  }
+    //}
 }
