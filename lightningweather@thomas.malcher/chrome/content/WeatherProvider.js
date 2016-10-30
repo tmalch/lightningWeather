@@ -6,34 +6,28 @@ const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttpre
 function log(level, msg){
     if(arguments.length == 1)
         dump(arguments[0]+"\n");
-    else if(level > 0)
+    else if(level >= 0)
         dump(msg+"\n");
 }
 
-/*
-function IForecast(data){
-    function IForecastElement(){
-        this.weather
-        this.timestamp
-        this.published
-        this.period
-        this.nestedForecast
-    }
+/* A ForecastElement is an obj with the following attributes
+ForecastElement(){
+ this.weather
+ this.timestamp
+ this.published
+ this.period
+ this.nestedForecast
+ }
+ */
 
-    this.forEach(func);
-    this.forEachFrom(start, func);
-    this.add(elem);  // add given ForecastElement to the Forecast overwrite an eventually existing Element for the same time period
 
-    this.toJson();
-    this.combine(other);
-    this.limitTo(start,end);
-
-    this.granularity;
-    this.startDatetime;
-    this.endDatetime
-}
-*/
-
+/*** mergeForecastElements
+ *
+ * merges two ForecastElement objects does not make a copy
+ * @param e1
+ * @param e2
+ * @returns {*}
+ */
 function mergeForecastElements(e1, e2){
     if (e1 == null){
         return e2;
@@ -67,6 +61,14 @@ function mergeForecastElements(e1, e2){
 var IForecast = {
     forEach: function(func){
         this._data.forEach(func);
+    },
+    forEachFlat: function(func){
+        this._data.forEach(function(elem){
+            func(elem);
+            if(elem.nestedForecast){
+                elem.nestedForecast.forEachFlat(func)
+            }
+        });
     },
     forEachFrom: function(start, func){
             let start_timestamp = start.getTime();
@@ -177,11 +179,27 @@ var IForecast = {
 
     toJSON: function(){
             return this._data;
-        }
+        },
+    age: function(){
+        let most_recent = (new Date(0)).getTime();
+        this.forEachFlat(function(elem){
+            if(elem.published >= most_recent){
+                most_recent = elem.published
+            }
+        });
+        return most_recent;
+    }
 };
 
+/*** Forecast constructor
+ *
+ * A Forecast obj is the main data holder
+ * It enhances a list of ForecastElements with functions for merging
+ *
+ * @param data: list of ForecastElements
+ * @constructor
+ */
 function Forecast(data){
-
     let self = this;
     this.granularity = undefined;
     this._data = [];

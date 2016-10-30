@@ -4,12 +4,13 @@ var weatherProviders = {};
 Components.utils.import("resource://WeatherProvider.js", weatherProviders);
 var Forecast = weatherProviders.Forecast;
 
+// reference to the document used by WeatherViews
 params.document_ref = document;
 
 function log(level, msg) {
     if (arguments.length == 1)
         dump(arguments[0] + "\n");
-    else if (level > 0)
+    else if (level >= 0)
         dump(msg + "\n");
 }
 
@@ -28,19 +29,20 @@ var lightningweather = {
             if (data == "provider") { // if user selected a new Provider
                 let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
                 if (provider_instance_description) {
-                    lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
+                    lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.city_id);
                     lightningweather.forecast = null;
-                    //\\ get or load and request
-                    lightningweather.forecastModule.requestForecast();
                     log(0, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
+                    //\\ get or load and request
+                    lightningweather.updateCurrentView();
                 }
             }
         }
     },
-    createWeatherModule: function (provider_name, city_id) {
+    createForecastModule: function (provider_name, city_id) {
         for (let provider in weatherProviders) {
             if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
-                return new weatherProviders[provider](city_id, lightningweather.updateForecast);
+                // use mergeForecast as save_callback for requestForecast
+                return new weatherProviders[provider](city_id, lightningweather.mergeForecast);
             }
         }
         return undefined;
@@ -57,116 +59,136 @@ var lightningweather = {
         for (var key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
                 let weather_mod = lightningweather.views[key];
-                weather_mod.view.addEventListener("viewloaded", lightningweather.viewloaded);
-                weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.resizeHandler.bind(lightningweather, weather_mod));
+                weather_mod.view.addEventListener("viewloaded", lightningweather.onViewLoaded);
+                weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.onResize.bind(lightningweather, weather_mod));
             }
         }
 
         try {
             let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
-            lightningweather.forecastModule = lightningweather.createWeatherModule(provider_instance_description.provider_name, provider_instance_description.city_id);
-            log(0, "Init Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
+            lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.city_id);
+            log(0, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
         } catch (e) {
-            lightningweather.forecastModule = lightningweather.createWeatherModule("yahoo", "548536");
-            log(0, "Init Use default WeatherModule: yahoo 548536");
+            log(0, "Error in reading Preferences: use default hardcoded ForecastModule: yahoo 548536");
+            lightningweather.forecastModule = lightningweather.createForecastModule("yahoo", "548536");
         }
+
         //\\ get or load and request
-        lightningweather.forecastModule.requestForecast();
+        lightningweather.updateCurrentView();
     },
 
-    resizeHandler: function (weather_mod) {
-        //\\get or load or request then clear and annotate
+    onViewLoaded: function () {
+        log(1, "loaded view " + currentView().type);
+        lightningweather.updateCurrentView()
+    },
+
+    onResize: function (weather_mod) {
+        log(1, "resize view " + weather_mod.view.type);
+        weather_mod.clear();
+        lightningweather.updateCurrentView();
+    },
+
+    updateCurrentView: function(){
+        let weather_mod = lightningweather.views[currentView().type];
         weather_mod.clear();
         if (lightningweather.forecast instanceof Forecast) {
             weather_mod.annotate(lightningweather.forecast);
+            lightningweather.tryUpdateForecast();
         } else {
-            log(1, "resizeHandler: no forecast available");
+            log(1, "updateCurrentView: no forecast available -> try to load");
+            lightningweather.loadForecast();
         }
     },
-
-    viewloaded: function () {
-        //\\get or load or request then clear and annotate
-        log(0, "loaded view " + currentView().type);
-        let weather_mod = lightningweather.views[currentView().type];
-
+    loadForecast: function(){
+        lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
+            if (forecast_data) {
+                log(0, "found forecast in Storage " + forecast_data.length);
+                lightningweather.forecast = new Forecast(forecast_data);
+            } else { // no forecast in object or storage -> request
+                log(0, "No forecast in Storage!");
+                lightningweather.forecast = new Forecast();
+            }
+            lightningweather.updateCurrentView();
+        });
+    },
+    /***
+     * merge given Forecast with possibly existing Forecast
+     * @param forecast
+     */
+    mergeForecast: function (forecast) {
+        if (!forecast) {
+            return;  // failed
+        }
         if (lightningweather.forecast instanceof Forecast) {
-            weather_mod.clear();
-            weather_mod.annotate(lightningweather.forecast);
+            forecast.combine(lightningweather.forecast);
+            lightningweather.forecast = forecast;
+            lightningweather.saveForecast();
         } else { // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
                 if (forecast_data) {
                     log(0, "found forecast in Storage " + forecast_data.length);
-                    lightningweather.forecast = new Forecast(forecast_data);
-                    weather_mod.clear();
-                    weather_mod.annotate(lightningweather.forecast);
+                    let existing_forecast = new Forecast(forecast_data);
+
                 } else { // no forecast in object or storage -> request
-                    log(0, "No forecast in Storage! request new one");
-                    lightningweather.forecastModule.requestForecast();
+                    log(0, "No forecast in Storage!");
+                    let existing_forecast = new Forecast();
                 }
+                forecast.combine(lightningweather.forecast);
+                lightningweather.forecast = forecast;
+                lightningweather.saveForecast();
             });
         }
     },
-
-    saveAndSet: function (forecast) {
-        lightningweather.forecast = forecast;
-        lightningweather.storage.set(lightningweather.forecastModule.storeageId, forecast, function (k) {
+    saveForecast: function(){
+        lightningweather.storage.set(lightningweather.forecastModule.storeageId, lightningweather.forecast, function (k) {
             log(0, "saved forecast into DB")
         });
-        let weather_mod = lightningweather.views[currentView().type];
-        weather_mod.clear();
-        weather_mod.annotate(lightningweather.forecast);
     },
-
-    updateForecast: function (forecast) {
-        if (!forecast) {
-            return;
-        }
-        if (lightningweather.forecast == null) {
-            lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (existing_forecast_data) {
-                if (existing_forecast_data) {
-                    let existing_forecast = new Forecast(existing_forecast_data);
-                    //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-                    //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-
-                    forecast.combine(existing_forecast);
-                    //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-                }
-                lightningweather.saveAndSet(forecast);
-            });
-        } else {
-            let existing_forecast = lightningweather.forecast;
-
-            //log(0,"From storage "+existing_forecast.length+" daily with "+existing_forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-            //log(0,"From Request "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-            forecast.combine(existing_forecast);
-            //log(0,"combined forecasts "+forecast.length+" daily with "+forecast._data.reduce(function(s,e){ return s+new Date(e.timestamp)+" with "+e.nestedForecast.length+"\n "},"\n"))
-
-            lightningweather.saveAndSet(forecast);
-        }
-    },
-
-    update: function () {
+    /**
+     * request an update of the Forecast
+     */
+    tryUpdateForecast: function () {
+        log(0,"try to Update Forecast");
         if (!lightningweather.forecastModule) {
             lightningweather.onLoad();
         }
         if (lightningweather.forecastModule) {
-            lightningweather.forecastModule.requestForecast();
+            if (!(lightningweather.forecast instanceof Forecast) || lightningweather.forecast.age() < Date.now()-15*1000){ // after 5 minutes the Forecast is too old
+                lightningweather.forecastModule.requestForecast();
+            }
         }
     }
 };
 
 
+
 window.addEventListener("load", lightningweather.onLoad, false);
-window.setInterval(lightningweather.update, 5 * 60 * 1000);
 
 //window.addEventListener("load", teste , false);
 //window.setInterval(teste, 6000);
 
+Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 function teste() {
 
     dump("teste\n");
     let c = currentView();
+
+    let f = function ({a: a="Hallo", b: b="welt" } = {}, c){
+        log(a+b+c);
+    };
+    f();
+    f({}, "cc");
+    f({a : "blub "}, 6);
+
+
+    let mozDate = cal.jsDateToDateTime(new Date(1477399460*1000));
+    log(mozDate);
+    log(mozDate.hour);
+
+    mozDate = cal.jsDateToDateTime(new Date(1477399460*1000)).getInTimezone(c.timezone);
+    log(mozDate);
+    log(mozDate.hour);
 
     let test_box = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
     test_box.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(\"http://openweathermap.org/img/w/02d.png\") !important; background-size: contain !important;");
