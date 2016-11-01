@@ -26,7 +26,7 @@ function ViewWeatherModule(view) {
     };
     this.annotate = function(forecast){
         forecast.forEachFrom(cal.dateTimeToJsDate(self.view.startDate), function(elem){
-            let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone);
+            let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone /* richtig ist hier TZ des Ortes von dem der Forecast ist*/);
             mozDate.isDate = true;
             if(mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
                 self.setWeather(mozDate, elem.weather.icon);
@@ -37,11 +37,14 @@ function ViewWeatherModule(view) {
     this.setWeather = function(mozdate, icon){throw "NOT IMPLEMENTED"};
 }
 
-
 WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
+/*** can be used for Day and WeekView can only show one Icon for the whole day
+ *
+ * @param view
+ * @constructor
+ */
 function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
-    this.type = "week";
 
     this.setWeather = function(mozdate, icon){
         try {
@@ -68,7 +71,6 @@ function WeekViewWeatherModule(view) {
 HourlyViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
-    this.type = "week";
     var self = this;
 
     this.getOrCreateWeatherBox = function(mozdate, day_col ){
@@ -129,8 +131,7 @@ function HourlyViewWeatherModule(view) {
                 let curStartMin = day_col.mStartMin;
                 elem.nestedForecast.sort();
                 elem.nestedForecast.forEach(function (elem2){
-                    let datetime = new Date(elem2.timestamp);
-                    let mozdatetime = cal.jsDateToDateTime(datetime);
+                    let mozdatetime = cal.jsDateToDateTime(new Date(elem2.timestamp));
                     let startMin = mozdatetime.hour*60+mozdatetime.minute;
                     let endMin = startMin+elem2.period;
 
@@ -142,15 +143,17 @@ function HourlyViewWeatherModule(view) {
                     if(endMin > day_col.mEndMin){
                         endMin = day_col.mEndMin
                     }
-
+                    if (endMin <= curStartMin){
+                        return;
+                    }
                     let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
                     if(box){
                         let icon = elem2.weather.icon;
                         box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
-                        //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         weatherbox.appendChild(box);
+                        curStartMin = endMin;
                     }
-                    curStartMin = endMin;
                 });
             }else{
                 let icon = elem.weather.icon;
@@ -187,7 +190,6 @@ function HourlyViewWeatherModule(view) {
 MonthViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function MonthViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
-    this.type = "month";
     var self = this;
 
     this.setWeather = function(mozdate, icon){

@@ -1,17 +1,6 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 
-<!--
-<prefwindow id="ligthningweather-prefs"
-            title="ligthningweather Options"
-            buttons="extra1"
-            buttonlabelextra1="apply"
-            ondialogextra1="lightningweather_prefs.apply();"
-            ondialogaccept="lightningweather_prefs.apply();"
-            onload="lightningweather_prefs.onLoad();"
-            xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
--->
-
 <dialog id="ligthningweather-prefs"
         title="ligthningweather Options"
         buttons="accept,cancel"
@@ -35,12 +24,6 @@
 
         <tooltip id="error_msg_container" style="background-color: #33DD00;">
         </tooltip>
-<!--        <tree id="elementList" flex="1" height="100%" seltype="multiple" onclick="lightningweather_prefs.sourceTree.onClick(event)" onselect="lightningweather_prefs.sourceTree.onSelect();">
-            <treecols>
-                <treecol id="element"  primary="true" flex="1"/>
-            </treecols>
-            <treechildren/>
-        </tree>-->
     </prefpane>
 
     <preferences>

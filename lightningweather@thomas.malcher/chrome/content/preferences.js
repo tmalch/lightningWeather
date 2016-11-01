@@ -14,88 +14,9 @@ function log(level, msg){
         dump(msg+"\n");
 }
 
-delete providers['Forecast'];
-
 var NO_RESULTS_VALUE = "_";
 
 lightningweather_prefs = {
-
-    sourceTree: {
-        row_data: null,
-        data: [[ "yahoo",["Paris, US", "Paris, FR", "Paris, RU"] ]],
-
-        get rowCount() { return this.row_data.length; },
-        selection: null,
-
-        getCellText: function( row , column ){
-            return this.row_data[row].text
-        },
-        setTree: function(treebox){ this.treebox = treebox; },
-
-
-        getLevel: function(row){
-            if(this.row_data[row].isprovider){
-                return 0;
-            }
-            return 1;
-        },
-        hasNextSibling: function(row, afterIndex){ return false;},
-        getParentIndex: function(row){ return row-1;},
-
-
-        getImageSrc: function(row,col){ return null; },
-        getRowProperties: function(row,props){},
-        isSeparator: function(row){ return false; },
-        isSorted: function(){ return false; },
-        isContainer: function(row){ return false; },
-
-        getSelectedIdx: function(){
-            var start = {}, end = {}, numRanges = this.selection.getRangeCount(), selectedIndices = [];
-
-            for (var t = 0; t < numRanges; t++){
-                this.selection.getRangeAt(t, start, end);
-                for (var v = start.value; v <= end.value; v++)
-                    selectedIndices.push(v);
-            }
-            return selectedIndices;
-        },
-        onClick: function(event){
-            log(0, "clicked")
-            var tbo = lightningweather_prefs.sourceTree.treebox;
-            let row_idx = tbo.getRowAt(event.clientX, event.clientY);
-
-
-            if(this.row_data[row_idx].isprovider){
-                this.selection.clearRange(row_idx, row_idx);
-                let first_location_idx = row_idx+1;
-                if(this.row_data.length > first_location_idx && !this.row_data[first_location_idx].isprovider){
-                    this.selectedIndices.push(first_location_idx);
-                    this.selectedIndices.forEach(i => this.selection.rangedSelect(i, i, true))
-                }
-            }else{
-                this.selectedIndices.push(row_idx);
-                this.selectedIndices.forEach(i => this.selection.rangedSelect(i, i, true))
-            }
-        },
-        selectedIndices: [],
-        onSelect: function(){
-            log("selection changed "+this.selection.count);
-
-            return;
-            let selectedIndices = this.getSelectedIdx();
-            // clear selections that are not allowed
-            selectedIndices.forEach(function(i){
-                if(this.row_data[i].isprovider) {
-                    this.selection.clearRange(i, i);
-                    if(this.row_data.length > i+1 && !this.row_data[i+1].isprovider){
-                        this.selection.select(i+1)
-                    }
-                }
-            }.bind(this));
-
-            log(selectedIndices.filter(i => !this.row_data[i].isprovider).length+": "+selectedIndices.filter(i => !this.row_data[i].isprovider));
-        },
-},
 
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
 
@@ -149,12 +70,6 @@ lightningweather_prefs = {
                 }
             }
         }.bind(this));
-
-        //this.sourceTree.row_data = this.provider_list.filter(p => p != this.provider_list.CombinedWeatherModule).map(function(e){return {text:e.class, isprovider:true};});
-        //this.sourceTree.row_data.splice(1,0,{text:"Paris, US Florida", isprovider:false}, {text:"Paris, US Missouri", isprovider:false}, {text:"Paris, FR", isprovider:false});
-        //this.sourceTree.row_data.splice(5,0,{text:"Paris, FR", isprovider:false});
-        //
-        //document.getElementById('elementList').view = this.sourceTree;
     },
 
     providerSelected: function(event){
