@@ -1,7 +1,11 @@
 
 
 var providers = {};
-Components.utils.import("resource://WeatherProvider.js", providers);
+Components.utils.import("resource://openweatherprovider.js", providers);
+Components.utils.import("resource://yahooprovider.js", providers);
+Components.utils.import("resource://darkskyprovider.js", providers);
+//Components.utils.import("resource://combinedprovider.js", providers);
+
 
 function log(level, msg){
     if(arguments.length == 1)

@@ -2,4 +2,8 @@ content     lightningweather    chrome/content/
 overlay chrome://calendar/content/calendar-views.xul chrome://lightningweather/content/index.xul
 resource SimpleStorage.js chrome://lightningweather/content/SimpleStorage.js
 resource WeatherViews.js chrome://lightningweather/content/WeatherViews.js
-resource WeatherProvider.js chrome://lightningweather/content/WeatherProvider.js
+resource Forecast.js chrome://lightningweather/content/Forecast.js
+resource openweatherprovider.js chrome://lightningweather/content/providers/openweatherprovider.js
+resource yahooprovider.js chrome://lightningweather/content/providers/yahooprovider.js
+resource darkskyprovider.js chrome://lightningweather/content/providers/darkskyprovider.js
+resource combinedprovider.js chrome://lightningweather/content/providers/combinedprovider.js

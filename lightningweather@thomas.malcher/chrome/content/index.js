@@ -1,8 +1,13 @@
 Cu.import("resource://SimpleStorage.js");
 Cu.import("resource://WeatherViews.js");
+
 var weatherProviders = {};
-Components.utils.import("resource://WeatherProvider.js", weatherProviders);
-var Forecast = weatherProviders.Forecast;
+Cu.import("resource://openweatherprovider.js", weatherProviders);
+Cu.import("resource://yahooprovider.js", weatherProviders);
+Cu.import("resource://darkskyprovider.js", weatherProviders);
+//Cu.import("resource://combinedprovider.js", weatherProviders);
+
+Components.utils.import("resource://Forecast.js");
 
 // reference to the document used by WeatherViews
 params.document_ref = document;
