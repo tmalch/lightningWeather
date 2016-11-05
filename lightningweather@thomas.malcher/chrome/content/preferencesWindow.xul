@@ -11,16 +11,22 @@
     <prefpane id="sw2-stock-pane" label="Stock Settings">
 
         <hbox align="center">
-            <label control="location_query" value="Location:"/>
-            <textbox id="location_query" maxlength="20" oninput="lightningweather_prefs.locationQueryChanged(event);" preference="query"/>
+            <label control="location_list" value="Location:"/>
+            <menulist editable="true" sizetopopup="none" style="width: 200px" id="location_list" oninput="lightningweather_prefs.locationQueryChanged(event);"
+                      onclick="lightningweather_prefs.onclick(event)" onselect="lightningweather_prefs.locationSelected(event)">
+                <menupopup ignorekeys="true">
+                </menupopup>
+            </menulist>
         </hbox>
-        <menulist id="provider_list" oncommand="lightningweather_prefs.providerSelected(event)">
-            <menupopup>
-            </menupopup>
-        </menulist>
-
-        <listbox id="location_list" seltype="single" onselect="lightningweather_prefs.locationSelected(event);">
-        </listbox>
+        <hbox align="center">
+            <label control="provider_list" value="Provider:"/>
+            <menulist id="provider_list" oncommand="lightningweather_prefs.providerSelected(event)">
+                <menupopup>
+                </menupopup>
+            </menulist>
+        </hbox>
+        <!--<listbox id="location_list" seltype="single" onselect="lightningweather_prefs.locationSelected(event);">-->
+        <!--</listbox>-->
 
         <tooltip id="error_msg_container" style="background-color: #33DD00;">
         </tooltip>
