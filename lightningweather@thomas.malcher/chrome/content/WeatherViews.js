@@ -24,9 +24,9 @@ function ViewWeatherModule(view) {
             self.clearWeather(dt);
         });
     };
-    this.annotate = function(forecast){
+    this.annotate = function(forecast, tz){
         forecast.forEachFrom(cal.dateTimeToJsDate(self.view.startDate), function(elem){
-            let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(self.view.timezone /* richtig ist hier TZ des Ortes von dem der Forecast ist*/);
+            let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz /* richtig ist hier TZ des Ortes von dem der Forecast ist*/);
             mozDate.isDate = true;
             if(mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
                 self.setWeather(mozDate, elem.weather.icon);

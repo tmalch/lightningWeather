@@ -26,6 +26,7 @@ var lightningweather = {
     forecastModule: null,
     forecast: null,
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
+    tz: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
 
     prefObserver: {
         observe: function (subject, topic, data) {
@@ -34,20 +35,22 @@ var lightningweather = {
             if (data == "provider") { // if user selected a new Provider
                 let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
                 if (provider_instance_description) {
-                    lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.city_id);
+                    lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
                     lightningweather.forecast = null;
-                    log(0, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
+                    log(0, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.location);
                     //\\ get or load and request
                     lightningweather.updateCurrentView();
                 }
             }
         }
     },
-    createForecastModule: function (provider_name, city_id) {
+    createForecastModule: function (provider_name, location) {
         for (let provider in weatherProviders) {
             if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
+                let tz = lightningweather.tz.getTimezone(location.tz || "Europe/Vienna");
+                location.tz = tz;
                 // use mergeForecast as save_callback for requestForecast
-                return new weatherProviders[provider](city_id, lightningweather.mergeForecast);
+                return new weatherProviders[provider](location, lightningweather.mergeForecast);
             }
         }
         return undefined;
@@ -71,11 +74,12 @@ var lightningweather = {
 
         try {
             let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
-            lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.city_id);
-            log(0, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + provider_instance_description.city_id);
+            log(0, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
+            lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
         } catch (e) {
-            log(0, "Error in reading Preferences: use default hardcoded ForecastModule: yahoo 548536");
-            lightningweather.forecastModule = lightningweather.createForecastModule("yahoo", "548536");
+            log(0, e);
+            log(1, "Error in reading Preferences: use default hardcoded ForecastModule: yahoo Graz");
+            lightningweather.forecastModule = lightningweather.createForecastModule("yahoo", {"id":"548536", "tz":"Europe/Vienna", "geo":{"latitude":"47.068562","longitude":"15.44318"}});
         }
 
         //\\ get or load and request
@@ -97,7 +101,7 @@ var lightningweather = {
         let weather_mod = lightningweather.views[currentView().type];
         weather_mod.clear();
         if (lightningweather.forecast instanceof Forecast) {
-            weather_mod.annotate(lightningweather.forecast);
+            weather_mod.annotate(lightningweather.forecast, lightningweather.forecastModule.tz);
             lightningweather.tryUpdateForecast();
         } else {
             log(1, "updateCurrentView: no forecast available -> try to load");
@@ -173,25 +177,18 @@ window.addEventListener("load", lightningweather.onLoad, false);
 //window.setInterval(teste, 6000);
 
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
-
+var bla = Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider);//createInstance(Components.interfaces.calITimezoneProvider);
 function teste() {
-
     dump("teste\n");
     let c = currentView();
 
-    let f = function ({a: a="Hallo", b: b="welt" } = {}, c){
-        log(a+b+c);
-    };
-    f();
-    f({}, "cc");
-    f({a : "blub "}, 6);
-
-
+    let tz = bla.getTimezone("America/Bogota");
+    dump(tz);
     let mozDate = cal.jsDateToDateTime(new Date(1477399460*1000));
     log(mozDate);
     log(mozDate.hour);
 
-    mozDate = cal.jsDateToDateTime(new Date(1477399460*1000)).getInTimezone(c.timezone);
+    mozDate = cal.jsDateToDateTime(new Date(1477399460*1000)).getInTimezone(tz);
     log(mozDate);
     log(mozDate.hour);
 
