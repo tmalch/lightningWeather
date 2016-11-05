@@ -1,7 +1,7 @@
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
-var EXPORTED_SYMBOLS = ['Forecast', 'log'];
+var EXPORTED_SYMBOLS = ['Forecast', 'log', 'BaseProvider', 'GeoLookup'];
 
 function log(level, msg){
     if(arguments.length == 1)
@@ -223,3 +223,100 @@ function Forecast(data){
     this.sort();
     //this.updateGranularity();
 }
+
+BaseProvider.prototype.error = function(){
+    log(1, this.req.status+" -- "+this.req.statusText);
+    this.save_callback(new Forecast())
+};
+BaseProvider.prototype.success = function(event){
+    log(0,"got response");
+    let forecast = this.parseForecast(event.currentTarget);
+    this.save_callback(forecast);
+};
+BaseProvider.prototype.requestForecast = function(){
+    if(this.url == null){
+        log(2,"City not given");
+        this.save_callback(new Forecast())
+    }
+    if(this.req.readyState != 0 && this.req.readyState != 4 ){
+        log(0,"request already running - state: "+ this.req.readyState);
+        return;  // already waiting for a response -> no need to request it again
+    }
+    this.req.open("GET", this.url);
+    this.req.send();
+    log(1, "request sent");
+};
+BaseProvider.prototype.parseForecast = function(){
+    throw "NOT IMPLEMENTED"
+};
+
+function BaseProvider(callback, tz){
+    this.tz = tz;
+    this.save_callback = callback;
+    this.storeageId = Math.floor(Math.random()*1000).toString(36);
+    this.req = new XMLHttpRequest();
+    this.req.timeout = 2000;
+    this.req.addEventListener("error", this.error.bind(this));
+    this.req.addEventListener("abort", this.error.bind(this));
+    this.req.addEventListener("timeout", this.error.bind(this));
+    this.req.addEventListener("load", this.success.bind(this));
+}
+
+function GeoLookup(){
+    this.req = new XMLHttpRequest();
+    this.req.timeout = 2000;
+}
+GeoLookup.prototype.error = function(callback, event){
+    log(1, this.req.status+" -- "+this.req.statusText);
+    callback([]);
+};
+GeoLookup.prototype.success = function(callback, event){
+
+    let locations = this.parseLocations(event.currentTarget);
+    callback(locations);
+};
+GeoLookup.prototype.locations = function(query, callback){
+    query = query+" "; // returns better results
+    let q = "?q=select woeid, name, country, admin1,admin2,admin3, centroid, timezone from geo.places where text = \""+query+"\" and placeTypeName = \"Town\"&format=json";
+
+    if(this.req.readyState != 0 && this.req.readyState != 4 ){
+        log(0,"request already running - state: "+ this.req.readyState);
+        this.req.abort();
+    }
+    this.req.addEventListener("error", this.error.bind(this, callback));
+    this.req.addEventListener("abort", this.error.bind(this, callback));
+    this.req.addEventListener("timeout", this.error.bind(this, callback));
+    this.req.addEventListener("load", this.success.bind(this, callback));
+    this.req.open("GET", "https://query.yahooapis.com/v1/public/yql"+q);
+    this.req.send();
+};
+GeoLookup.prototype.parseLocations = function(http_response){
+    try{
+        var response = JSON.parse(http_response.responseText);
+        if(response.error != undefined){
+            log(1,"ERROR: "+http_response.responseText);
+            return [];
+        }
+        if(response.query.results == null){
+            return [];
+        }
+    }catch(e){
+        log(1,e);
+        return [];
+    }
+
+    let places = response.query.results.place;
+    if(!Array.isArray(places)){
+        places = [places];
+    }
+    let hitting_locations = places.map(function(place) {
+        let name = place.name + "," + place.country.code;
+        let desc = name;
+        let hierarchy = [place.admin1, place.admin2, place.admin3].map(e => (e != null) ? e.content : "").join("|");
+        if(hierarchy.length > 0)
+            desc = desc +" ["+hierarchy+")";
+
+        return [name, JSON.stringify({'geo':place.centroid ,'id': place.woeid, 'tz': place.timezone.content}), desc]
+    });
+    return hitting_locations;
+};
