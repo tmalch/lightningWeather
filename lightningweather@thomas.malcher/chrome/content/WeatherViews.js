@@ -97,9 +97,6 @@ HourlyViewWeatherModule.prototype.getOrCreateWeatherBox = function(mozdate, day_
 function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     var self = this;
-
-
-
     this.makeBox = function(startMin, endMin, pixelsPerMinute, parent_orientation){
         if(endMin <= startMin) {
             return undefined;
@@ -110,7 +107,7 @@ function HourlyViewWeatherModule(view) {
         // calculate duration pixel as the difference between
         // start pixel and end pixel to avoid rounding errors.
 
-        let box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
+        let box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "box");
         if (parent_orientation == "vertical") {
             box.setAttribute("orient", "vertical");
             box.setAttribute("height", durPix);
@@ -175,7 +172,6 @@ function HourlyViewWeatherModule(view) {
                 weatherbox.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
                 let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value',Math.round(elem.weather.temp)+"C");
-                //box.appendChild(l);
                 weatherbox.appendChild(l);
             }
         });
