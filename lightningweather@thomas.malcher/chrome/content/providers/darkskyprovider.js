@@ -9,17 +9,29 @@ DarkSkyWeatherModule.prototype.parseForecast = function(http_response){
     try{
         let response = JSON.parse(http_response.responseText);
         let daily = response.daily.data || [];
-        let daily_forecasts_data = daily.map(function(datapoint){
-
-            log(0,"got forecast "+datapoint.icon+" for date "+new Date(datapoint.time*1000));
+        let hourly = response.hourly.data || [];
+        log(0,"num hourly forecasts "+hourly.length);
+        let hourly_forecasts_data = hourly.map(function(datapoint){
             return {
-                timestamp: datapoint.timestamp*1000,
-                period: 24*60,
-                weather: {icon: datapoint.icon},
+                timestamp: datapoint.time*1000,
+                period: 1*60,
+                weather: {icon: datapoint.icon, temp: datapoint.temperature },
                 published: Date.now()
             }
         });
-
+        let daily_forecasts_data = daily.map(function(datapoint){
+            let day_start_time = datapoint.time*1000;
+            let day_end_time = (datapoint.time+24*60*60)*1000;
+            let nestedForecast = new Forecast(hourly_forecasts_data.filter(p => (day_start_time <= p.timestamp && p.timestamp <= day_end_time)));
+            log(0,"got forecast "+datapoint.icon+" for date "+new Date(datapoint.time*1000)+" with "+nestedForecast.length+" nested");
+            return {
+                timestamp: datapoint.time*1000,
+                period: 24*60,
+                weather: {icon: datapoint.icon, temp: (parseFloat(datapoint.temperatureMin)+parseFloat(datapoint.temperatureMax))/2 },
+                published: Date.now(),
+                nestedForecast: nestedForecast
+            }
+        });
         return new Forecast(daily_forecasts_data);
     }catch (e){
         log(1,e);
