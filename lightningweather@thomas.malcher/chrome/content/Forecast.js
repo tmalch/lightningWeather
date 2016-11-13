@@ -71,8 +71,7 @@ var IForecast = {
             }
         });
     },
-    forEachFrom: function(start, func){
-            let start_timestamp = start.getTime();
+    forEachFrom: function(start_timestamp, func){
             this.forEach(function(elem){
                 if(elem.timestamp >= start_timestamp){
                     func(elem)
@@ -101,23 +100,23 @@ var IForecast = {
             let i = this._data.findIndex(function(e){ return (e.timestamp > elem.timestamp)});
             if (i === -1) { // no element in self._data is later than elem
                 if (this._data.length > 0 && this._data[this._data.length-1].timestamp == elem.timestamp){  // last element of self._data can be equal
-                    log(0,"merge last "+new Date(this._data[this._data.length-1].timestamp)+" with "+new Date(elem.timestamp));
+                    log(0,"merge last "+(new Date(this._data[this._data.length-1].timestamp)).toUTCString()+" with "+(new Date(elem.timestamp)).toUTCString());
                     elem = mergeForecastElements(this._data[this._data.length-1], elem);
                     this._data[this._data.length-1] = elem;
                 }else{  // all elements are earlier
-                    log(0,"append "+new Date(elem.timestamp));
+                    log(0,"append "+(new Date(elem.timestamp)).toUTCString());
                     this._data.push(elem);
                 }
             }else if (i === 0){ // all elements in self._data are later than elem
-                log(0,"prepend "+new Date(elem.timestamp)+" to "+new Date(this._data[0].timestamp));
+                log(0,"prepend "+(new Date(elem.timestamp)).toUTCString()+" to "+(new Date(this._data[0].timestamp)).toUTCString());
                 this._data.splice(0, 0, elem);
             }else if (i > 0){
                 if (this._data[i-1].timestamp == elem.timestamp){
-                    log(0,"merge "+new Date(this._data[i-1].timestamp)+" at "+(i-1)+" with "+new Date(elem.timestamp));
+                    log(0,"merge "+(new Date(this._data[i-1].timestamp)).toUTCString()+" at "+(i-1)+" with "+(new Date(elem.timestamp)).toUTCString());
                     elem = mergeForecastElements(this._data[i-1], elem);
                     this._data[i-1] = elem;
                 }else {
-                    log(0,"insert "+new Date(elem.timestamp));
+                    log(0,"insert "+(new Date(elem.timestamp)).toUTCString());
                     this._data.splice(i, 0, elem);
                 }
             }
@@ -190,7 +189,7 @@ var IForecast = {
 };
 
 Object.defineProperties(IForecast, {
-    "length": {"get": function() { return self._data.length; } }
+    "length": {"get": function() { return this._data.length; } }
 });
 Object.defineProperties(IForecast, { "granularity":
     {"get": function(){
@@ -242,6 +241,7 @@ BaseProvider.prototype.requestForecast = function(){
         log(0,"request already running - state: "+ this.req.readyState);
         return;  // already waiting for a response -> no need to request it again
     }
+    log(0, "going to request: "+this.url);
     this.req.open("GET", this.url);
     this.req.send();
     log(1, "request sent");

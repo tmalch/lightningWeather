@@ -37,7 +37,7 @@ var lightningweather = {
                 if (provider_instance_description) {
                     lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
                     lightningweather.forecast = null;
-                    log(0, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.location);
+                    log(1, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.location);
                     //\\ get or load and request
                     lightningweather.updateCurrentView();
                 }
@@ -47,8 +47,7 @@ var lightningweather = {
     createForecastModule: function (provider_name, location) {
         for (let provider in weatherProviders) {
             if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
-                let tz = lightningweather.tz.getTimezone(location.tz || "Europe/Vienna");
-                location.tz = tz;
+                location.tz = lightningweather.tz.getTimezone(location.tz || "Europe/Vienna");
                 // use mergeForecast as save_callback for requestForecast
                 return new weatherProviders[provider](location, lightningweather.mergeForecast);
             }
@@ -74,7 +73,7 @@ var lightningweather = {
 
         try {
             let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
-            log(0, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
+            log(1, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
             lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
         } catch (e) {
             log(0, e);
@@ -92,7 +91,7 @@ var lightningweather = {
     },
 
     onResize: function (weather_mod) {
-        log(1, "resize view " + weather_mod.view.type);
+        log(0, "resize view " + weather_mod.view.type);
         weather_mod.clear();
         lightningweather.updateCurrentView();
     },
@@ -163,6 +162,7 @@ var lightningweather = {
         }
         if (lightningweather.forecastModule) {
             if (!(lightningweather.forecast instanceof Forecast) || lightningweather.forecast.age() < Date.now()-15*1000){ // after 5 minutes the Forecast is too old
+                log(1, "Forecast too old -> request new one");
                 lightningweather.forecastModule.requestForecast();
             }
         }
@@ -184,8 +184,15 @@ function teste() {
 
     let tz = bla.getTimezone("America/Bogota");
     dump(tz);
-    let mozDate = cal.jsDateToDateTime(new Date(1477399460*1000));
+    let mozDate = cal.createDateTime("2016-10-02");
+    mozDate.isDate = false;
+    mozDate.hour = 15;
+    mozDate.minute = 45;
+    //let mozDate = cal.jsDateToDateTime(new Date(1477399460*1000));
     log(mozDate);
+    log(mozDate.nativeTime);
+    mozDate.isDate = true;
+    log(mozDate.nativeTime);
     log(mozDate.hour);
 
     mozDate = cal.jsDateToDateTime(new Date(1477399460*1000)).getInTimezone(tz);
