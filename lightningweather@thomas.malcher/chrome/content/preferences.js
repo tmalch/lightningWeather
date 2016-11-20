@@ -1,11 +1,13 @@
 
 
 var providers = {};
-Components.utils.import("resource://openweatherprovider.js", providers);
-Components.utils.import("resource://yahooprovider.js", providers);
-Components.utils.import("resource://darkskyprovider.js", providers);
-//Components.utils.import("resource://combinedprovider.js", providers);
-Components.utils.import("resource://Forecast.js");
+Components.utils.import("chrome://lightningweather/content/providers/openweather.js", providers);
+Components.utils.import("chrome://lightningweather/content/providers/openweather.js", providers);
+Components.utils.import("chrome://lightningweather/content/providers/yahoo.js", providers);
+Components.utils.import("chrome://lightningweather/content/providers/darksky.js", providers);
+//Cu.import("chrome://lightningweather/content/providers/combined.js", providers);
+
+Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
 function log(level, msg){
     if(arguments.length == 1)

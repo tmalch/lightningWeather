@@ -1,5 +1,5 @@
 
-Components.utils.import("resource://Forecast.js");
+Components.utils.import("chrome://lightningweather/content/Forecast.js");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");

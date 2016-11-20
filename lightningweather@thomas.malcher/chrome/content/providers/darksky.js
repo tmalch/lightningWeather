@@ -1,4 +1,5 @@
-Components.utils.import("resource://Forecast.js");
+Components.utils.import("chrome://lightningweather/content/Forecast.js");
+
 var EXPORTED_SYMBOLS = ['DarkSkyWeatherModule'];
 
 DarkSkyWeatherModule.class = "darksky";
@@ -12,10 +13,11 @@ DarkSkyWeatherModule.prototype.parseForecast = function(http_response){
         let hourly = response.hourly.data || [];
         log(0,"num hourly forecasts "+hourly.length);
         let hourly_forecasts_data = hourly.map(function(datapoint){
+            log(0, "Iconname: "+ datapoint.icon);
             return {
                 timestamp: datapoint.time*1000,
                 period: 1*60,
-                weather: {icon: datapoint.icon, temp: datapoint.temperature },
+                weather: {icon: "chrome://lightningweather/skin/darksky/"+datapoint.icon+".png", temp: datapoint.temperature },
                 published: Date.now()
             }
         });

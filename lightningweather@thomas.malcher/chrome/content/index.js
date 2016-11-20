@@ -1,13 +1,14 @@
-Cu.import("resource://SimpleStorage.js");
-Cu.import("resource://WeatherViews.js");
+Cu.import("chrome://lightningweather/content/SimpleStorage.js");
+Cu.import("chrome://lightningweather/content/WeatherViews.js");
 
 var weatherProviders = {};
-Cu.import("resource://openweatherprovider.js", weatherProviders);
-Cu.import("resource://yahooprovider.js", weatherProviders);
-Cu.import("resource://darkskyprovider.js", weatherProviders);
-//Cu.import("resource://combinedprovider.js", weatherProviders);
+Cu.import("chrome://lightningweather/content/providers/openweather.js", weatherProviders);
+Cu.import("chrome://lightningweather/content/providers/openweather.js", weatherProviders);
+Cu.import("chrome://lightningweather/content/providers/yahoo.js", weatherProviders);
+Cu.import("chrome://lightningweather/content/providers/darksky.js", weatherProviders);
+//Cu.import("chrome://lightningweather/content/providers/combined.js", weatherProviders);
 
-Components.utils.import("resource://Forecast.js");
+Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
 // reference to the document used by WeatherViews
 params.document_ref = document;
@@ -15,7 +16,7 @@ params.document_ref = document;
 function log(level, msg) {
     if (arguments.length == 1)
         dump(arguments[0] + "\n");
-    else if (level >= 0)
+    else if (level >= 1)
         dump(msg + "\n");
 }
 

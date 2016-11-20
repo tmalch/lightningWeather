@@ -10,7 +10,7 @@ var params = {
 function log(level, msg){
     if(arguments.length == 1)
         dump(arguments[0]+"\n");
-    else if(level >= 0)
+    else if(level >= 1)
         dump(msg+"\n");
 }
 
