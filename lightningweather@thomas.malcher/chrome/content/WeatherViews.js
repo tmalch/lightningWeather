@@ -58,7 +58,7 @@ function WeekViewWeatherModule(view) {
             let orient = day_col.column.getAttribute("orient");
             let box = day_col.column.topbox;
             box.setAttribute("orient", orient);
-            box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + weather.icon + "\") !important; background-size: contain !important;");
+            box.setAttribute("style", "opacity: 0.4; background-image: url(" + weather.icon + ") !important; background-size: contain !important;");
         }catch (ex){
             log("setWeather: "+ex);
         }
@@ -84,7 +84,6 @@ HourlyViewWeatherModule.prototype.getOrCreateWeatherBox = function(mozdate, day_
             weatherbox.setAttribute("orient", orient);
             weatherbox.setAttribute("flex", "1");
             weatherbox.setAttribute("anonid", "weatherbox");
-            //weatherbox.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(\"http://openweathermap.org/img/w/02d.png\") !important; background-size: contain !important;");
 
             let stack = params.document_ref.getAnonymousElementByAttribute(day_col,"anonid","boxstack");
             stack.insertBefore(weatherbox, day_col.topbox);
@@ -111,6 +110,7 @@ function HourlyViewWeatherModule(view) {
         if (parent_orientation == "vertical") {
             box.setAttribute("orient", "vertical");
             box.setAttribute("height", durPix);
+            box.setAttribute("width", "100%");
         } else {
             box.setAttribute("orient", "horizontal");
             box.setAttribute("width", durPix);
@@ -123,6 +123,7 @@ function HourlyViewWeatherModule(view) {
         let local_startDate = self.view.mStartDate.clone();
         local_startDate.timezone = tz;
         log(1, "show "+forecast.length+" Forecasts from date: "+local_startDate);
+        var base_style = "opacity: 0.4; background-size: contain; background-repeat: repeat-y; background-position: right center; ";
         forecast.forEachFrom(local_startDate.nativeTime/1000, function(elem){
             let mozdate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz); /*self.view.timezone*/
             mozdate.isDate = true;
@@ -158,8 +159,8 @@ function HourlyViewWeatherModule(view) {
                     let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
                     if(box){
                         let icon = elem2.weather.icon;
-                        box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
-                        //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        box.setAttribute("style", base_style+"background-image: url(" + icon + ") !important; ");
+                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                         l.setAttribute('value',Math.round(elem2.weather.temp)+"C");
                         box.appendChild(l);
@@ -169,7 +170,7 @@ function HourlyViewWeatherModule(view) {
                 });
             }else{
                 let icon = elem.weather.icon;
-                weatherbox.setAttribute("style", "opacity: 0.4; background-image: url(\"" + icon + "\") !important; background-size: contain !important;");
+                weatherbox.setAttribute("style", base_style+"background-image: url(" + icon + ") !important;");
                 let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value',Math.round(elem.weather.temp)+"C");
                 weatherbox.appendChild(l);
@@ -213,7 +214,7 @@ function MonthViewWeatherModule(view) {
         try {
             let day_box = self.view.findDayBoxForDate(mozdate);
 
-            day_box.setAttribute("style", "opacity: 0.4; background-image: url(\"" + weather.icon  + "\") !important; background-size: contain !important;");
+            day_box.setAttribute("style", "opacity: 0.4; background-image: url(" + weather.icon  + ") !important; background-size: contain !important;");
             //let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
             //l.setAttribute('value',Math.round(weather.temp)+"C");
             //day_box.appendChild(l);

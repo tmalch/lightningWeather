@@ -201,7 +201,7 @@ function teste() {
     log(mozDate.hour);
 
     let test_box = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
-    test_box.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(\"http://openweathermap.org/img/w/02d.png\") !important; background-size: contain !important;");
+    test_box.setAttribute("style", "background-color: rgba(255,0,0,0.3); background-image: url(http://openweathermap.org/img/w/02d.png) !important; background-size: contain !important;");
     test_box.setAttribute("anonid", "weatherbox");
     let day_col = c.findColumnForDate(c.today()).column;
     //day_col.column.appendChild(test_box);
