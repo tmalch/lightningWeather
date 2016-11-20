@@ -8,6 +8,7 @@ var EXPORTED_SYMBOLS = ['OpenWeathermapModule'];
 
 
 OpenWeathermapModule.class = "openweather";
+OpenWeathermapModule.copyright_info = "Provided by <label href='https://openweathermap.org/' class='text-link' value='OpenWeatherMap'/>";
 
 OpenWeathermapModule.prototype = Object.create(BaseProvider.prototype);
 

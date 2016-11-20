@@ -3,6 +3,8 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 var EXPORTED_SYMBOLS = ['DarkSkyWeatherModule'];
 
 DarkSkyWeatherModule.class = "darksky";
+DarkSkyWeatherModule.copyright_info = "DarkSky provided by <label href='http://forecast.io' class='text-link' value='Forecast.io'/> <html:br/>" +
+                                        "Icons by <label href='https://www.amcharts.com' class='text-link' value='amCharts'/>";
 
 DarkSkyWeatherModule.prototype = Object.create(BaseProvider.prototype);
 

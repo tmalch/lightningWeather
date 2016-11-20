@@ -58,8 +58,9 @@ lightningweather_prefs = {
 
         // populate window based on default values
         this.location_list.inputField.placeholder = this.query;
-        this.selected_provider = this.provider_list[default_provider_idx];
         provider_list_inp.selectedItem = provider_list_inp.getItemAtIndex(default_provider_idx);
+        provider_list_inp.doCommand();
+//        this.selected_provider = this.provider_list[default_provider_idx];
 
         this.updateLocationList(this.query);
     },
@@ -69,6 +70,15 @@ lightningweather_prefs = {
     },
     providerSelected: function(event){
         this.selected_provider = this.provider_list[event.currentTarget.selectedIndex];
+        let container = document.getElementById("copyright_info");
+        while(container.firstChild)
+            container.removeChild(container.firstChild);
+        if(this.selected_provider.copyright_info){
+            let copyright_info = "<box xmlns:html='http://www.w3.org/1999/xhtml' xmlns='http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul'>"+this.selected_provider.copyright_info+"</box>";
+            var parser = new DOMParser();
+            let copyright_info_node = parser.parseFromString(copyright_info, "text/xml").documentElement;
+            container.appendChild(copyright_info_node);
+        }
     },
 
     locationQueryChanged: function(event){
@@ -78,14 +88,13 @@ lightningweather_prefs = {
         this.updateLocationList(user_input);
     },
 
-    updateLocationList: function(user_input, callback){
+    updateLocationList: function(user_input){
         if(!user_input || user_input.length < 3){
             this.setLocationList([]);
             return;
         }
         this.geolookup.locations(user_input, function(locations){
             this.setLocationList(locations);
-            callback && callback();
         }.bind(this));
     },
     setLocationList: function(locations){
