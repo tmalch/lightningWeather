@@ -17,7 +17,7 @@ DarkSkyWeatherModule.prototype.parseForecast = function(http_response){
             return {
                 timestamp: datapoint.time*1000,
                 period: 1*60,
-                weather: {icon: "chrome://lightningweather/skin/darksky/"+datapoint.icon+".png", temp: datapoint.temperature },
+                weather: {icon: "chrome://lightningweather/skin/darksky/"+datapoint.icon, temp: datapoint.temperature },
                 published: Date.now()
             }
         });
