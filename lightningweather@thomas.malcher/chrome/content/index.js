@@ -27,7 +27,7 @@ var lightningweather = {
     forecastModule: null,
     forecast: null,
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
-    tz: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
+    tz_service: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
 
     prefObserver: {
         observe: function (subject, topic, data) {
@@ -42,13 +42,20 @@ var lightningweather = {
                     //\\ get or load and request
                     lightningweather.updateCurrentView();
                 }
+            }else if (data == "icon_set"){
+                let icon_set = lightningweather.prefs.getCharPref("icon_set");
+                for (var key in lightningweather.views) {
+                    if (lightningweather.views.hasOwnProperty(key)) {
+                        lightningweather.views[key].setIconBaseUrl("chrome://lightningweather/skin/"+icon_set+"/");
+                    }
+                }
             }
         }
     },
     createForecastModule: function (provider_name, location) {
         for (let provider in weatherProviders) {
             if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
-                location.tz = lightningweather.tz.getTimezone(location.tz || "Europe/Vienna");
+                location.tz = lightningweather.tz_service.getTimezone(location.tz || "Europe/Vienna");
                 // use mergeForecast as save_callback for requestForecast
                 return new weatherProviders[provider](location, lightningweather.mergeForecast);
             }
@@ -57,16 +64,21 @@ var lightningweather = {
     },
     onLoad: function () {
         lightningweather.prefs.addObserver("", lightningweather.prefObserver, false);
-
         lightningweather.views = {
             "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
             "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
             "month": new MonthViewWeatherModule(document.getElementById("month-view")),
             "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))
         };
+        try {
+            var icon_set = lightningweather.prefs.getCharPref("icon_set");
+        }catch(e) {
+            icon_set = "default"
+        }
         for (var key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
                 let weather_mod = lightningweather.views[key];
+                weather_mod.setIconBaseUrl("chrome://lightningweather/skin/"+icon_set+"/");
                 weather_mod.view.addEventListener("viewloaded", lightningweather.onViewLoaded);
                 weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.onResize.bind(lightningweather, weather_mod));
             }
@@ -150,7 +162,7 @@ var lightningweather = {
     },
     saveForecast: function(){
         lightningweather.storage.set(lightningweather.forecastModule.storeageId, lightningweather.forecast, function (k) {
-            log(0, "saved forecast into DB")
+            log(0, "saved forecast for id "+lightningweather.forecastModule.storeageId+" into DB")
         });
     },
     /**

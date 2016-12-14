@@ -32,7 +32,7 @@ OpenWeathermapModule.prototype.parseForecast = function(http_response) {
         return {
             timestamp: elem.dt*1000,
             period: 3*60,
-            weather: {icon: self.icon_baseurl+elem.weather[0].icon+ ".png", temp: elem.main.temp, humidity: elem.main.humidity },
+            weather: {icon: "openweather/"+elem.weather[0].icon+".png", temp: elem.main.temp, humidity: elem.main.humidity },
             published: Date.now(),
             datetime: datetime,
             date: date,
@@ -91,7 +91,6 @@ function OpenWeathermapModule(city, callback) {
 //http://api.openweathermap.org/data/2.5/weather?id=2778067&APPID=c43ae0077ff0a3d68343555c23b97f5f
     BaseProvider.call(this, callback, city.tz);
     this.location = city.geo;
-    this.icon_baseurl = "http://openweathermap.org/img/w/";
     this.storeageId = OpenWeathermapModule.class+this.location.latitude+this.location.longitude;
     this.url = "http://api.openweathermap.org/data/2.5/forecast?lat="+this.location.latitude+"&lon="+this.location.longitude+"&APPID=c43ae0077ff0a3d68343555c23b97f5f&units=metric";
 }

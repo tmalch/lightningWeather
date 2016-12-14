@@ -224,12 +224,13 @@ function Forecast(data){
 }
 
 BaseProvider.prototype.error = function(){
-    log(1, this.req.status+" -- "+this.req.statusText);
+    log(1, "request error "+this.req.status+" -- "+this.req.statusText);
     this.save_callback(new Forecast())
 };
 BaseProvider.prototype.success = function(event){
-    log(0,"got response");
+    log(0,"got response ");
     let forecast = this.parseForecast(event.currentTarget);
+    log(0,"got forecast of length "+ forecast.length);
     this.save_callback(forecast);
 };
 BaseProvider.prototype.requestForecast = function(){
@@ -255,7 +256,7 @@ function BaseProvider(callback, tz){
     this.save_callback = callback;
     this.storeageId = Math.floor(Math.random()*1000).toString(36);
     this.req = new XMLHttpRequest();
-    this.req.timeout = 2000;
+    this.req.timeout = 5000;
     this.req.addEventListener("error", this.error.bind(this));
     this.req.addEventListener("abort", this.error.bind(this));
     this.req.addEventListener("timeout", this.error.bind(this));

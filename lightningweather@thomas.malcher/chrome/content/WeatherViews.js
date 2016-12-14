@@ -18,8 +18,12 @@ function log(level, msg){
 
 function ViewWeatherModule(view) {
     this.view = view;
+    this.icon_baseurl = "chrome://lightningweather/skin/default/";
     var self = this;
 
+    this.setIconBaseUrl = function(icon_baseurl){
+        self.icon_baseurl = icon_baseurl;
+    };
     this.clear = function(){
         let date_list = this.view.getDateList({});
         date_list.forEach(function (dt){
@@ -51,14 +55,14 @@ WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
  */
 function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
-
+    var self = this;
     this.setWeather = function(mozdate, weather){
         try {
             let day_col = this.view.findColumnForDate(mozdate);
             let orient = day_col.column.getAttribute("orient");
             let box = day_col.column.topbox;
             box.setAttribute("orient", orient);
-            box.setAttribute("style", "opacity: 0.4; background-image: url(" + weather.icon + ") !important; background-size: contain !important;");
+            box.setAttribute("style", 'opacity: 0.4; background-image: url("'+self.icon_baseurl+weather.icon + '") !important; background-size: contain !important;');
         }catch (ex){
             log("setWeather: "+ex);
         }
@@ -135,7 +139,8 @@ function HourlyViewWeatherModule(view) {
             let weatherbox = self.getOrCreateWeatherBox(mozdate, day_col);
             let orient = day_col.getAttribute("orient");
             log(0, "render forecast for "+mozdate);
-            if(elem.nestedForecast){
+            let day_icon = self.icon_baseurl+elem.weather.icon;
+            if(elem.nestedForecast && elem.nestedForecast.length > 0){
                 self.clearWeatherBox(weatherbox);
                 let curStartMin = day_col.mStartMin;
                 elem.nestedForecast.sort();
@@ -147,6 +152,7 @@ function HourlyViewWeatherModule(view) {
 
                     if(curStartMin < startMin){
                         let b = self.makeBox(curStartMin, startMin, day_col.pixelsPerMinute, orient); // insert a filling box
+                        b.setAttribute("style", base_style+"background-image: url(" + day_icon + ") !important;"); // with daily forecast icon
                         weatherbox.appendChild(b);
                         curStartMin = startMin;
                     }
@@ -158,9 +164,9 @@ function HourlyViewWeatherModule(view) {
                     }
                     let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
                     if(box){
-                        let icon = elem2.weather.icon;
-                        box.setAttribute("style", base_style+"background-image: url(" + icon + ") !important; ");
-                        box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
+                        let icon = self.icon_baseurl+elem2.weather.icon;
+                        box.setAttribute("style", base_style+'background-image: url("' + icon + '") !important; ');
+                        //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                         l.setAttribute('value',Math.round(elem2.weather.temp)+"C");
                         box.appendChild(l);
@@ -168,9 +174,14 @@ function HourlyViewWeatherModule(view) {
                         curStartMin = endMin;
                     }
                 });
+                // nested forecast doesn't fill the whole day
+                if(curStartMin < day_col.mEndMin){
+                    let b = self.makeBox(curStartMin, day_col.mEndMin, day_col.pixelsPerMinute, orient); // make a box till end of the day
+                    b.setAttribute("style", base_style+"background-image: url(" + day_icon + ") !important;"); // with daily forecast icon
+                    weatherbox.appendChild(b);
+                }
             }else{
-                let icon = elem.weather.icon;
-                weatherbox.setAttribute("style", base_style+"background-image: url(" + icon + ") !important;");
+                weatherbox.setAttribute("style", base_style+"background-image: url(" + day_icon + ") !important;");
                 let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value',Math.round(elem.weather.temp)+"C");
                 weatherbox.appendChild(l);
@@ -211,10 +222,11 @@ function MonthViewWeatherModule(view) {
     var self = this;
 
     this.setWeather = function(mozdate, weather){
+        let base_style = "opacity: 0.4; background-size: contain !important; background-position: right bottom !important; background-repeat: no-repeat !important; ";
         try {
             let day_box = self.view.findDayBoxForDate(mozdate);
 
-            day_box.setAttribute("style", "opacity: 0.4; background-image: url(" + weather.icon  + ") !important; background-size: contain !important;");
+            day_box.setAttribute("style", base_style+"background-image: url(" + self.icon_baseurl+weather.icon  + ") !important;");
             //let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
             //l.setAttribute('value',Math.round(weather.temp)+"C");
             //day_box.appendChild(l);
