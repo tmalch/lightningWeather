@@ -47,8 +47,8 @@ function DarkSkyWeatherModule(location, callback){
     BaseProvider.call(this, callback, location.tz);
     this.save_callback = callback;
     this.geoloc = location.geo;
-    this.storeageId = DarkSkyWeatherModule.class+this.geoloc;
+    this.storeageId = DarkSkyWeatherModule.class+this.geoloc.latitude+this.geoloc.longitude;
     this.tz = location.tz;
     let q = this.geoloc.latitude+","+this.geoloc.longitude;
-    this.url = "https://api.darksky.net/forecast/064d091f681950f7512a771c6a0697f4/"+q+"?exclude=[currently,minutely,alerts,flags]";
+    this.url = "https://api.darksky.net/forecast/064d091f681950f7512a771c6a0697f4/"+q+"?exclude=[currently,minutely,alerts,flags]&units=ca";
 }
