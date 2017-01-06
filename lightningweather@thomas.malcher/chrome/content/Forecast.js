@@ -1,14 +1,10 @@
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
-var EXPORTED_SYMBOLS = ['Forecast', 'log', 'BaseProvider', 'GeoLookup'];
+var EXPORTED_SYMBOLS = ['Forecast', 'BaseProvider', 'GeoLookup'];
 
-function log(level, msg){
-    if(arguments.length == 1)
-        dump(arguments[0]+"\n");
-    else if(level >= 0)
-        dump(msg+"\n");
-}
+Components.utils.import("resource://gre/modules/Log.jsm");
+let logger = Log.repository.getLogger("lightningweather.forecast");
 
 /* A ForecastElement is an obj with the following attributes
 ForecastElement(){
@@ -87,7 +83,7 @@ var IForecast = {
             //this.updateGranularity();
 
             if (other.granularity != undefined && this.granularity != undefined && other.granularity != this.granularity) {
-                log("cannot combine, granularity is different "+ other.granularity+" != "+this.granularity);
+                logger.info("cannot combine, granularity is different "+ other.granularity+" != "+this.granularity);
                 return;
             }
             other.forEach(function(elem){
@@ -100,23 +96,23 @@ var IForecast = {
             let i = this._data.findIndex(function(e){ return (e.timestamp > elem.timestamp)});
             if (i === -1) { // no element in self._data is later than elem
                 if (this._data.length > 0 && this._data[this._data.length-1].timestamp == elem.timestamp){  // last element of self._data can be equal
-                    log(0,"merge last "+(new Date(this._data[this._data.length-1].timestamp)).toUTCString()+" with "+(new Date(elem.timestamp)).toUTCString());
+                    logger.trace("merge last "+(new Date(this._data[this._data.length-1].timestamp)).toUTCString()+" with "+(new Date(elem.timestamp)).toUTCString());
                     elem = mergeForecastElements(this._data[this._data.length-1], elem);
                     this._data[this._data.length-1] = elem;
                 }else{  // all elements are earlier
-                    log(0,"append "+(new Date(elem.timestamp)).toUTCString());
+                    logger.trace("append "+(new Date(elem.timestamp)).toUTCString());
                     this._data.push(elem);
                 }
             }else if (i === 0){ // all elements in self._data are later than elem
-                log(0,"prepend "+(new Date(elem.timestamp)).toUTCString()+" to "+(new Date(this._data[0].timestamp)).toUTCString());
+                logger.trace("prepend "+(new Date(elem.timestamp)).toUTCString()+" to "+(new Date(this._data[0].timestamp)).toUTCString());
                 this._data.splice(0, 0, elem);
             }else if (i > 0){
                 if (this._data[i-1].timestamp == elem.timestamp){
-                    log(0,"merge "+(new Date(this._data[i-1].timestamp)).toUTCString()+" at "+(i-1)+" with "+(new Date(elem.timestamp)).toUTCString());
+                    logger.trace("merge "+(new Date(this._data[i-1].timestamp)).toUTCString()+" at "+(i-1)+" with "+(new Date(elem.timestamp)).toUTCString());
                     elem = mergeForecastElements(this._data[i-1], elem);
                     this._data[i-1] = elem;
                 }else {
-                    log(0,"insert "+(new Date(elem.timestamp)).toUTCString());
+                    logger.trace("insert "+(new Date(elem.timestamp)).toUTCString());
                     this._data.splice(i, 0, elem);
                 }
             }
@@ -145,7 +141,6 @@ var IForecast = {
             });
         },
 
-
     setData: function (data) {
             if (data != null && Array.isArray(data)){
                 this._data = data;
@@ -157,19 +152,10 @@ var IForecast = {
                 this.sort();
                 //this.updateGranularity();
             }else{
-                log(1, "setData: not valid data "+data)
+                logger.info("setData: not valid data "+data)
             }
         },
 
-/*    updateGranularity: function(){
-            if(this._data.length == 0) {
-                this.granularity = undefined;
-            } else if(this._data.length > 0 && this._data[0].period != undefined){
-                this.granularity = this._data.every(e => (e.period == this._data[0].period)) ? this._data[0].period : -1;
-            } else {
-                this.granularity = -1;
-            }
-        },*/
     toString: function(){
             return "["+ this._data.reduce(function(s, e){ return s+e.timestamp+", "; },"Forecast: ")+"]";
         },
@@ -191,6 +177,7 @@ var IForecast = {
 Object.defineProperties(IForecast, {
     "length": {"get": function() { return this._data.length; } }
 });
+
 Object.defineProperties(IForecast, { "granularity":
     {"get": function(){
             if(this._data.length == 0) {
@@ -223,29 +210,31 @@ function Forecast(data){
     //this.updateGranularity();
 }
 
+
+logger = Log.repository.getLogger("lightningweather.provider");
 BaseProvider.prototype.error = function(){
-    log(1, "request error "+this.req.status+" -- "+this.req.statusText);
+    logger.info("request error "+this.req.status+" -- "+this.req.statusText);
     this.save_callback(new Forecast())
 };
 BaseProvider.prototype.success = function(event){
-    log(0,"got response ");
+    logger.debug("got response ");
     let forecast = this.parseForecast(event.currentTarget);
-    log(0,"got forecast of length "+ forecast.length);
+    logger.info("got forecast of length "+ forecast.length);
     this.save_callback(forecast);
 };
 BaseProvider.prototype.requestForecast = function(){
     if(this.url == null){
-        log(2,"City not given");
+        logger.error("City not given");
         this.save_callback(new Forecast())
     }
     if(this.req.readyState != 0 && this.req.readyState != 4 ){
-        log(0,"request already running - state: "+ this.req.readyState);
+        logger.trace("request already running - state: "+ this.req.readyState);
         return;  // already waiting for a response -> no need to request it again
     }
-    log(0, "going to request: "+this.url);
+    logger.debug("going to request: "+this.url);
     this.req.open("GET", this.url);
     this.req.send();
-    log(1, "request sent");
+    logger.info("request sent");
 };
 BaseProvider.prototype.parseForecast = function(){
     throw "NOT IMPLEMENTED"
@@ -268,7 +257,7 @@ function GeoLookup(){
     this.req.timeout = 2000;
 }
 GeoLookup.prototype.error = function(callback, event){
-    log(1, this.req.status+" -- "+this.req.statusText);
+    logger.debug("request error " + this.req.status+" -- "+this.req.statusText);
     callback([]);
 };
 GeoLookup.prototype.success = function(callback, event){
@@ -281,7 +270,7 @@ GeoLookup.prototype.locations = function(query, callback){
     let q = "?q=select woeid, name, country, admin1,admin2,admin3, centroid, timezone from geo.places where text = \""+query+"\" and placeTypeName = \"Town\"&format=json";
 
     if(this.req.readyState != 0 && this.req.readyState != 4 ){
-        log(0,"request already running - state: "+ this.req.readyState);
+        logger.debug("request already running - state: "+ this.req.readyState);
         this.req.abort();
     }
     this.req.addEventListener("error", this.error.bind(this, callback));
@@ -295,14 +284,14 @@ GeoLookup.prototype.parseLocations = function(http_response){
     try{
         var response = JSON.parse(http_response.responseText);
         if(response.error != undefined){
-            log(1,"ERROR: "+http_response.responseText);
+            logger.info("ERROR: "+http_response.responseText);
             return [];
         }
         if(response.query.results == null){
             return [];
         }
     }catch(e){
-        log(1,e);
+        logger.error(e);
         return [];
     }
 

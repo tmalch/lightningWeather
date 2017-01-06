@@ -3,6 +3,8 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
+Components.utils.import("resource://gre/modules/Log.jsm");
+let logger = Log.repository.getLogger("lightningweather.provider.yahoo");
 
 var EXPORTED_SYMBOLS = ['YahooWeatherModule'];
 
@@ -15,11 +17,11 @@ YahooWeatherModule.prototype.parseForecast = function(http_response){
     try{
         var response = JSON.parse(http_response.responseText);
         if(response.error != undefined){
-            log(1,"ERROR: "+response.error);
+            logger.error("http: "+response.error);
             return new Forecast();
         }
         let results = response.query.results || [];
-        log(0, JSON.stringify(results));
+        logger.debug(JSON.stringify(results));
         let daily_forecasts_data = results.channel.map(function(elem){
             let forecast_elem = elem.item.forecast;
             let date = cal.jsDateToDateTime(new Date(forecast_elem.date), self.tz);
@@ -33,7 +35,7 @@ YahooWeatherModule.prototype.parseForecast = function(http_response){
         });
         return new Forecast(daily_forecasts_data);
     }catch (e){
-        log(1,e);
+        logger.error(e);
         return new Forecast();
     }
 };
@@ -46,5 +48,4 @@ function YahooWeatherModule(location, callback) {
     this.storeageId = YahooWeatherModule.class+this.city_woeid;
     let q = "?q=select item.forecast from weather.forecast where woeid = \""+this.city_woeid+"\" and u = \"c\"&format=json";
     this.url = this.baseurl+q;
-    log(0, this.url)
 }

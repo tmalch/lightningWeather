@@ -8,13 +8,9 @@ Components.utils.import("chrome://lightningweather/content/providers/darksky.js"
 //Cu.import("chrome://lightningweather/content/providers/combined.js", providers);
 
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
+Components.utils.import("resource://gre/modules/Log.jsm");
+let logger = Log.repository.getLogger("lightningweather.preferences");
 
-function log(level, msg){
-    if(arguments.length == 1)
-        dump(arguments[0]+"\n");
-    else if(level >= 0)
-        dump(msg+"\n");
-}
 
 var NO_RESULTS_VALUE = "_";
 
@@ -27,7 +23,7 @@ lightningweather_prefs = {
     query: "Graz, AT",
 
     onLoad: function(){
-        log(0,"PREFERENCE window loaded"+window.buttons+document.buttons);
+        logger.debug("PREFERENCE window loaded"+window.buttons+document.buttons);
         for(let provider in providers){
             if( providers.hasOwnProperty( provider ) && provider != "CombinedWeatherModule") {
                 this.provider_list.push(providers[provider])
@@ -60,7 +56,6 @@ lightningweather_prefs = {
         this.location_list.inputField.placeholder = this.query;
         provider_list_inp.selectedItem = provider_list_inp.getItemAtIndex(default_provider_idx);
         provider_list_inp.doCommand();
-//        this.selected_provider = this.provider_list[default_provider_idx];
 
         this.updateLocationList(this.query);
     },
@@ -83,7 +78,7 @@ lightningweather_prefs = {
 
     locationQueryChanged: function(event){
         let user_input = event.currentTarget.value;
-        log(0, "location_query ch: "+ user_input);
+        logger.debug("location_query changed: "+ user_input);
         this.query = user_input;
         this.updateLocationList(user_input);
     },
@@ -115,19 +110,19 @@ lightningweather_prefs = {
     locationSelected: function(event){
         let selected_item = event.target.selectedItem;
         if(!selected_item || selected_item.value == NO_RESULTS_VALUE){
-            log(0, "No results Clear Selection");
+            logger.debug("No results Clear Selection");
         }else{
-            log(0,"location selected "+selected_item.label+" - "+ selected_item.value);
+            logger.debug("location selected "+selected_item.label+" - "+ selected_item.value);
         }
     },
 
     apply: function(){
         let selected_location = this.location_list.selectedItem;
         if(selected_location && selected_location.value != NO_RESULTS_VALUE){
-            log(0,"save Prefs");
+            logger.debug("save Prefs");
             this.prefs.setCharPref("provider", JSON.stringify({"provider_name":this.selected_provider.class,"location": JSON.parse(selected_location.value)}));
             this.prefs.setCharPref("location_query", this.query);
-            log(0, "SAVE "+this.prefs.getCharPref("provider"));
+            logger.info("SAVE "+this.prefs.getCharPref("provider"));
             return true;
         }else{
             let error_msg_elem = document.getElementById("error_msg_container");

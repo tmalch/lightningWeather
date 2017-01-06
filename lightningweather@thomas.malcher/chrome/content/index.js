@@ -13,12 +13,12 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 // reference to the document used by WeatherViews
 params.document_ref = document;
 
-function log(level, msg) {
-    if (arguments.length == 1)
-        dump(arguments[0] + "\n");
-    else if (level >= 1)
-        dump(msg + "\n");
-}
+Components.utils.import("resource://gre/modules/Log.jsm");
+let root_logger = Log.repository.getLogger("lightningweather");
+root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
+root_logger.level = Log.Level.Info;
+
+let logger = Log.repository.getLogger("lightningweather.index");
 
 
 var lightningweather = {
@@ -31,14 +31,14 @@ var lightningweather = {
 
     prefObserver: {
         observe: function (subject, topic, data) {
-            log(0, "subject: " + subject + " topic: " + topic + " pref: " + data);
+            logger.debug("subject: " + subject + " topic: " + topic + " pref: " + data);
             if (topic != "nsPref:changed") return;
             if (data == "provider") { // if user selected a new Provider
                 let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
                 if (provider_instance_description) {
                     lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
                     lightningweather.forecast = null;
-                    log(1, "Prefs Use WeatherModule: " + provider_instance_description.provider_name + " " + provider_instance_description.location);
+                    logger.info("Prefs Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
                     //\\ get or load and request
                     lightningweather.updateCurrentView();
                 }
@@ -86,11 +86,10 @@ var lightningweather = {
 
         try {
             let provider_instance_description = JSON.parse(lightningweather.prefs.getCharPref("provider"));
-            log(1, "Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
+            logger.info("Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
             lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
         } catch (e) {
-            log(0, e);
-            log(1, "Error in reading Preferences: use default hardcoded ForecastModule: yahoo Graz");
+            logger.error("Error in reading Preferences: use default hardcoded ForecastModule: yahoo Graz", e);
             lightningweather.forecastModule = lightningweather.createForecastModule("yahoo", {"id":"548536", "tz":"Europe/Vienna", "geo":{"latitude":"47.068562","longitude":"15.44318"}});
         }
 
@@ -99,12 +98,12 @@ var lightningweather = {
     },
 
     onViewLoaded: function () {
-        log(1, "loaded view " + currentView().type);
+        logger.debug("loaded view " + currentView().type);
         lightningweather.updateCurrentView()
     },
 
     onResize: function (weather_mod) {
-        log(0, "resize view " + weather_mod.view.type);
+        logger.trace("resize view " + weather_mod.view.type);
         weather_mod.clear();
         lightningweather.updateCurrentView();
     },
@@ -116,17 +115,17 @@ var lightningweather = {
             weather_mod.annotate(lightningweather.forecast, lightningweather.forecastModule.tz);
             lightningweather.tryUpdateForecast();
         } else {
-            log(1, "updateCurrentView: no forecast available -> try to load");
+            logger.debug("updateCurrentView: no forecast available -> try to load");
             lightningweather.loadForecast();
         }
     },
     loadForecast: function(){
         lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
             if (forecast_data) {
-                log(0, "found forecast in Storage " + forecast_data.length);
+                logger.debug("found forecast in Storage " + forecast_data.length);
                 lightningweather.forecast = new Forecast(forecast_data);
             } else { // no forecast in object or storage -> request
-                log(0, "No forecast in Storage!");
+                logger.debug("No forecast in Storage!");
                 lightningweather.forecast = new Forecast();
             }
             lightningweather.updateCurrentView();
@@ -147,11 +146,11 @@ var lightningweather = {
         } else { // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
                 if (forecast_data) {
-                    log(0, "found forecast in Storage " + forecast_data.length);
+                    logger.debug("found forecast in Storage " + forecast_data.length);
                     let existing_forecast = new Forecast(forecast_data);
 
                 } else { // no forecast in object or storage -> request
-                    log(0, "No forecast in Storage!");
+                    logger.debug("No forecast in Storage!");
                     let existing_forecast = new Forecast();
                 }
                 forecast.combine(lightningweather.forecast);
@@ -162,20 +161,20 @@ var lightningweather = {
     },
     saveForecast: function(){
         lightningweather.storage.set(lightningweather.forecastModule.storeageId, lightningweather.forecast, function (k) {
-            log(0, "saved forecast for id "+lightningweather.forecastModule.storeageId+" into DB")
+            logger.debug("saved forecast for id "+lightningweather.forecastModule.storeageId+" into DB")
         });
     },
     /**
      * request an update of the Forecast
      */
     tryUpdateForecast: function () {
-        log(0,"try to Update Forecast");
+        logger.debug("try to Update Forecast");
         if (!lightningweather.forecastModule) {
             lightningweather.onLoad();
         }
         if (lightningweather.forecastModule) {
             if (!(lightningweather.forecast instanceof Forecast) || lightningweather.forecast.age() < Date.now()-15*1000){ // after 5 minutes the Forecast is too old
-                log(1, "Forecast too old -> request new one");
+                logger.info("Forecast too old -> request new one");
                 lightningweather.forecastModule.requestForecast();
             }
         }
@@ -183,6 +182,3 @@ var lightningweather = {
 };
 
 window.addEventListener("load", lightningweather.onLoad, false);
-
-//window.addEventListener("load", teste , false);
-//window.setInterval(teste, 6000);
