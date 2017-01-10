@@ -166,9 +166,12 @@ function HourlyViewWeatherModule(view) {
                         let icon = self.icon_baseurl + elem2.weather.icon;
                         box.setAttribute("style", base_style + 'background-image: url("' + icon + '") !important; ');
                         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
-                        let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
-                        l.setAttribute('value', Math.round(elem2.weather.temp) + "C");
-                        box.appendChild(l);
+                        let temp = parseFloat(elem.weather.temp);
+                        if(!isNaN(temp)) {
+                            let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
+                            l.setAttribute('value', Math.round(temp) + "C");
+                            box.appendChild(l);
+                        }
                         weatherbox.appendChild(box);
                         curStartMin = endMin;
                     }
@@ -181,9 +184,12 @@ function HourlyViewWeatherModule(view) {
                 }
             } else {
                 weatherbox.setAttribute("style", base_style + "background-image: url(" + day_icon + ") !important;");
-                let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
-                l.setAttribute('value', Math.round(elem.weather.temp) + "C");
-                weatherbox.appendChild(l);
+                let temp = parseFloat(elem.weather.temp);
+                if(!isNaN(temp)) {
+                    let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
+                    l.setAttribute('value', Math.round(temp) + "C");
+                    weatherbox.appendChild(l);
+                }
             }
         });
     };
