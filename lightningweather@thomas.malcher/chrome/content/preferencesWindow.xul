@@ -9,14 +9,14 @@
         xmlns:html="http://www.w3.org/1999/xhtml"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-    <prefpane id="sw2-stock-pane" label="Stock Settings">
+    <prefpane id="sw2-stock-pane" label="Settings">
         <vbox>
             <hbox align="center">
                 <label control="location_list" value="Location:"/>
                 <menulist editable="true" sizetopopup="none" style="width: 300px" id="location_list"
                           oninput="lightningweather_prefs.locationQueryChanged(event);"
                           onclick="lightningweather_prefs.onclick(event)"
-                          onselect="lightningweather_prefs.locationSelected(event)">
+                          onselect="lightningweather_prefs.locationSelected(event)" >
                     <menupopup ignorekeys="true">
                     </menupopup>
                 </menulist>
@@ -29,7 +29,7 @@
                 </menulist>
             </hbox>
             <separator class="groove-thin"/>
-            <description id="copyright_info"></description>
+            <description id="copyright_info" style="height: 50px;"></description>
             <tooltip id="error_msg_container" style="background-color: #33DD00;">
             </tooltip>
         </vbox>
