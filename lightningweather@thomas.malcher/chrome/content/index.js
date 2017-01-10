@@ -28,7 +28,7 @@ var lightningweather = {
     forecast: null,
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
     tz_service: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
-
+    forecast_timeout: 120*60*1000, //duration in ms after which a new Forecast gets requested
     prefObserver: {
         observe: function (subject, topic, data) {
             logger.debug("subject: " + subject + " topic: " + topic + " pref: " + data);
@@ -173,7 +173,7 @@ var lightningweather = {
             lightningweather.onLoad();
         }
         if (lightningweather.forecastModule) {
-            if (!(lightningweather.forecast instanceof Forecast) || lightningweather.forecast.age() < Date.now()-15*1000){ // after 5 minutes the Forecast is too old
+            if (!(lightningweather.forecast instanceof Forecast) || lightningweather.forecast.age() < Date.now()-lightningweather.forecast_timeout){ // after forecast_timeout ms the Forecast is too old
                 logger.info("Forecast too old -> request new one");
                 lightningweather.forecastModule.requestForecast();
             }
