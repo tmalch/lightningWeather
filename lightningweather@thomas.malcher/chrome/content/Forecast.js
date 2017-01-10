@@ -259,11 +259,19 @@ function GeoLookup(){
 GeoLookup.prototype.error = function(callback, event){
     logger.debug("request error " + this.req.status+" -- "+this.req.statusText);
     callback([]);
+    // clone request to remove all eventListeners
+    let new_req = new XMLHttpRequest();
+    new_req.timeout = this.req.timeout;
+    this.req = new_req;
 };
 GeoLookup.prototype.success = function(callback, event){
 
     let locations = this.parseLocations(event.currentTarget);
     callback(locations);
+    // clone request to remove all eventListeners
+    let new_req = new XMLHttpRequest();
+    new_req.timeout = this.req.timeout;
+    this.req = new_req;
 };
 GeoLookup.prototype.locations = function(query, callback){
     query = query+" "; // returns better results
@@ -300,11 +308,12 @@ GeoLookup.prototype.parseLocations = function(http_response){
         places = [places];
     }
     let hitting_locations = places.map(function(place) {
-        let name = place.name + "," + place.country.code;
+        let hierarchy = [place.admin3, place.admin2, place.admin1].filter(e => e != null).map(e => e.content);
+        let name = place.name + ", " + place.country.code + " " + hierarchy[0] || "";
         let desc = name;
-        let hierarchy = [place.admin1, place.admin2, place.admin3].map(e => (e != null) ? e.content : "").join("|");
-        if(hierarchy.length > 0)
-            desc = desc +" ["+hierarchy+")";
+        let hierarchy_str = hierarchy.join("|");
+        if(hierarchy_str.length > 0)
+            desc = "("+hierarchy_str+")";
 
         return [name, JSON.stringify({'geo':place.centroid ,'id': place.woeid, 'tz': place.timezone.content}), desc]
     });

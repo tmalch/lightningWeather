@@ -11,7 +11,6 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 Components.utils.import("resource://gre/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.preferences");
 
-
 var NO_RESULTS_VALUE = "_";
 
 lightningweather_prefs = {
@@ -47,6 +46,7 @@ lightningweather_prefs = {
             if(default_provider_idx == -1) {
                 default_provider_idx = 0;
             }
+            var selected_location = provider_instance_description.location;
         }catch(e) {
             default_provider_idx = this.provider_list.findIndex(p => p.class == "yahoo");
             this.query = "Graz, AT";
@@ -54,14 +54,24 @@ lightningweather_prefs = {
 
         // populate window based on default values
         this.location_list.inputField.placeholder = this.query;
-        provider_list_inp.selectedItem = provider_list_inp.getItemAtIndex(default_provider_idx);
+        provider_list_inp.selectedIndex = default_provider_idx;
         provider_list_inp.doCommand();
 
-        this.updateLocationList(this.query);
+        this.geolookup.locations(this.query, function(locations){
+            this.setLocationList(locations);
+            // find the old saved location on the basis of the geo location and select it
+            let default_location_idx = locations.findIndex(function(e, i){
+                let this_location = JSON.parse(e[1]).geo;
+                return (this_location.latitude == selected_location.geo.latitude &&
+                        this_location.longitude == selected_location.geo.longitude);
+            }.bind(this));
+            this.location_list.selectedIndex = default_location_idx;
+            this.location_list.menupopup.hidePopup();
+        }.bind(this));
     },
     onclick: function(event){
         this.location_list.value = this.query;
-        this.location_list.select();
+        //this.location_list.select();
     },
     providerSelected: function(event){
         this.selected_provider = this.provider_list[event.currentTarget.selectedIndex];
@@ -77,10 +87,9 @@ lightningweather_prefs = {
     },
 
     locationQueryChanged: function(event){
-        let user_input = event.currentTarget.value;
-        logger.debug("location_query changed: "+ user_input);
-        this.query = user_input;
-        this.updateLocationList(user_input);
+        this.query = event.currentTarget.value;
+        logger.debug("location_query changed: "+ this.query);
+        this.updateLocationList(this.query);
     },
 
     updateLocationList: function(user_input){
@@ -88,10 +97,9 @@ lightningweather_prefs = {
             this.setLocationList([]);
             return;
         }
-        this.geolookup.locations(user_input, function(locations){
-            this.setLocationList(locations);
-        }.bind(this));
+        this.geolookup.locations(user_input, this.setLocationList.bind(this));
     },
+
     setLocationList: function(locations){
         let count = this.location_list.itemCount;
         while(count-- > 0){
@@ -102,7 +110,9 @@ lightningweather_prefs = {
         }else if(locations.length == 0){
             this.location_list.appendItem("no results", NO_RESULTS_VALUE);
         }else{
-            locations.forEach(e => this.location_list.appendItem(e[0], e[1], e[2]));
+            locations.forEach(function(e, i){
+                this.location_list.appendItem(e[0], e[1], e[2]);
+            }.bind(this));
         }
         this.location_list.menupopup.openPopup(this.location_list, "after_start", 0,0,true);
     },
@@ -113,6 +123,7 @@ lightningweather_prefs = {
             logger.debug("No results Clear Selection");
         }else{
             logger.debug("location selected "+selected_item.label+" - "+ selected_item.value);
+            this.query = selected_item.label;
         }
     },
 

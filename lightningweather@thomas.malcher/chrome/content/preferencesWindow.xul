@@ -13,7 +13,7 @@
         <vbox>
             <hbox align="center">
                 <label control="location_list" value="Location:"/>
-                <menulist editable="true" sizetopopup="none" style="width: 200px" id="location_list"
+                <menulist editable="true" sizetopopup="none" style="width: 300px" id="location_list"
                           oninput="lightningweather_prefs.locationQueryChanged(event);"
                           onclick="lightningweather_prefs.onclick(event)"
                           onselect="lightningweather_prefs.locationSelected(event)">
