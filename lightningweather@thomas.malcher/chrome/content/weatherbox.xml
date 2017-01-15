@@ -7,7 +7,7 @@
 
 <!DOCTYPE bindings SYSTEM "chrome://global/locale/global.dtd" >
 
-<bindings id="calendar-month-view-bindings"
+<bindings id="lightningweather-calendar-views-bindings"
           xmlns="http://www.mozilla.org/xbl"
           xmlns:html="http://www.w3.org/1999/xhtml"
           xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -29,17 +29,13 @@
                            class="calendar-month-day-box-date-label"
                            xbl:inherits="relation,selected,value"/>
             </xul:hbox>
-            <xul:stack>
-                <xul:box style="background-color: red" anonid="weatherbox">
-                    <xul:description>
-                        Hallo WELT
-                    </xul:description>
+            <xul:stack flex="1">
+                <xul:box anonid="weatherbox" flex="1">
                 </xul:box>
                 <xul:vbox anonid="day-items" class="calendar-month-day-box-items-box" flex="1">
                     <children/>
                 </xul:vbox>
             </xul:stack>
         </content>
-
     </binding>
 </bindings>
