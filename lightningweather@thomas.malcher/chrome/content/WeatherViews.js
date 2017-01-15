@@ -1,3 +1,28 @@
+/*
+ The MIT License (MIT)
+
+ Copyright (c) 2017 Thomas Malcher
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
+
+
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule', 'HourlyViewWeatherModule', "params"];
@@ -167,7 +192,7 @@ function HourlyViewWeatherModule(view) {
                         box.setAttribute("style", base_style + 'background-image: url("' + icon + '") !important; ');
                         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
                         let temp = parseFloat(elem2.weather.temp);
-                        if(!isNaN(temp)) {
+                        if (!isNaN(temp)) {
                             let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                             l.setAttribute('value', Math.round(temp) + "C");
                             box.appendChild(l);
@@ -185,7 +210,7 @@ function HourlyViewWeatherModule(view) {
             } else {
                 weatherbox.setAttribute("style", base_style + "background-image: url(" + day_icon + ") !important;");
                 let temp = parseFloat(elem.weather.temp);
-                if(!isNaN(temp)) {
+                if (!isNaN(temp)) {
                     let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                     l.setAttribute('value', Math.round(temp) + "C");
                     weatherbox.appendChild(l);
