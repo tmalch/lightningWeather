@@ -4,12 +4,12 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>lightningWeather@thomas.malcher</em:id>
+    <em:id>lightningweather@thomas.malcher</em:id>
     <em:name>lightningWeather</em:name>
     <em:version>0.1b</em:version>
     <em:creator>Thomas Malcher</em:creator>
     <em:contributor>Jonathan Protzenko (thunderbird-stdlib)</em:contributor>
-    <em:description>shows weather icons in the background of Lightning Calendar</em:description>
+    <em:description>LightningWeather shows the weather forecast in the background of the calendar so you can easily coordinate your activities with the weather.</em:description>
     <em:homepageURL>https://github.com/tmalch/lightningWeather</em:homepageURL>
     <em:optionsURL>chrome://lightningweather/content/preferencesWindow.xul</em:optionsURL>
     <em:targetApplication>
