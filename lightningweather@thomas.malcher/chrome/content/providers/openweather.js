@@ -3,6 +3,8 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
+Components.utils.import("resource://gre/modules/Log.jsm");
+let logger = Log.repository.getLogger("lightningweather.provider.openweather");
 
 var EXPORTED_SYMBOLS = ['OpenWeathermapModule'];
 
@@ -17,11 +19,11 @@ OpenWeathermapModule.prototype.parseForecast = function(http_response) {
     try{
         var response = JSON.parse(http_response.responseText);
         if(response.cod != 200 || !Array.isArray(response.list)){
-            log(1,"ERROR: "+http_response.responseText);
+            logger.error("http: "+http_response.responseText);
             return new Forecast();
         }
     }catch (e) {
-        log(1,"ERROR: "+e);
+        logger.error("ERROR: "+e);
         return new Forecast();
     }
 
@@ -53,7 +55,7 @@ OpenWeathermapModule.prototype.parseForecast = function(http_response) {
 
     let daily_forecasts_data = [];
     grouped_forecast.forEach(function(hourly_forecasts, date_timestamp){
-        log(0,date_timestamp+" has "+ hourly_forecasts.length+" forecasts");
+        logger.debug(date_timestamp+" has "+ hourly_forecasts.length+" forecasts");
         hourly_forecasts = hourly_forecasts.map(function(e){
             return {timestamp: e.timestamp,
                 period:e.period ,
@@ -94,33 +96,3 @@ function OpenWeathermapModule(city, callback) {
     this.storeageId = OpenWeathermapModule.class+this.location.latitude+this.location.longitude;
     this.url = "http://api.openweathermap.org/data/2.5/forecast?lat="+this.location.latitude+"&lon="+this.location.longitude+"&APPID=c43ae0077ff0a3d68343555c23b97f5f&units=metric";
 }
-
-
-/*
-OpenWeathermapModule.locations = function(user_text, callback){
-    let oReq = new XMLHttpRequest();
-    oReq.timeout = 2000;
-    oReq.addEventListener("load", OpenWeathermapModule.parseLocation.bind(this, callback));
-    oReq.addEventListener("error", event => callback() );
-    oReq.addEventListener("abort", event => callback() );
-    oReq.addEventListener("timeout", event => callback() );
-    oReq.open("GET", "http://api.openweathermap.org/data/2.5/weather?q="+user_text+"&APPID=c43ae0077ff0a3d68343555c23b97f5f");
-    oReq.send();
-};
-OpenWeathermapModule.parseLocation = function(callback, event){
-    try{
-        var response = JSON.parse(event.currentTarget.responseText);
-        if(response.cod == 404){
-            log(0,"city not found "+response);
-            return callback([]);
-        }else if(response.cod != 200){
-            return callback();
-        }
-        let name = response.name+", "+response.sys.country;
-        callback([[name,response.id]]);
-    }catch (e){
-        log(1, e);
-        return callback();
-    }
-};
-*/
