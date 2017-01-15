@@ -166,7 +166,7 @@ function HourlyViewWeatherModule(view) {
                         let icon = self.icon_baseurl + elem2.weather.icon;
                         box.setAttribute("style", base_style + 'background-image: url("' + icon + '") !important; ');
                         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
-                        let temp = parseFloat(elem.weather.temp);
+                        let temp = parseFloat(elem2.weather.temp);
                         if(!isNaN(temp)) {
                             let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                             l.setAttribute('value', Math.round(temp) + "C");
