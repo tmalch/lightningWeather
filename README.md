@@ -1,7 +1,7 @@
 # lightningWeather
 This is a Thunderbird Addon that shows the weather forecast in the background of the Calendar.
 
-Install from [addons.mozilla.org](https://addons.mozilla.org/../lightningWeather)
+Install from [addons.mozilla.org](https://addons.mozilla.org/en-US/thunderbird/addon/lightningweather)
 
 <p align=center>
 <img src="https://github.com/tmalch/lightningWeather/blob/master/screenshots/calendar.png" width="75%" alt="Screenshot"/>
