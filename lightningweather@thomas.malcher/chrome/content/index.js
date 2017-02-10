@@ -54,7 +54,7 @@ var lightningweather = {
     forecast: null,
     prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
     tz_service: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
-    forecast_timeout: 120*60*1000, //duration in ms after which a new Forecast gets requested
+    forecast_timeout: 5*60*60*1000, //duration in ms after which a new Forecast gets requested
     prefObserver: {
         observe: function (subject, topic, data) {
             logger.debug("subject: " + subject + " topic: " + topic + " pref: " + data);
@@ -75,6 +75,16 @@ var lightningweather = {
                         lightningweather.views[key].setIconBaseUrl("chrome://lightningweather/skin/"+icon_set+"/");
                     }
                 }
+                lightningweather.updateCurrentView();
+            }else if (data == "units"){
+                let unit = lightningweather.prefs.getCharPref("units");
+                logger.debug("Selected Unit" + unit);
+                for (var key in lightningweather.views) {
+                    if (lightningweather.views.hasOwnProperty(key)) {
+                        lightningweather.views[key].setTemperatureUnit(unit);
+                    }
+                }
+                lightningweather.updateCurrentView();
             }
         }
     },
@@ -101,10 +111,16 @@ var lightningweather = {
         }catch(e) {
             icon_set = "default"
         }
-        for (var key in lightningweather.views) {
+        try {
+            var temperature_unit = lightningweather.prefs.getCharPref("units");
+        }catch(e) {
+            temperature_unit = "C"
+        }
+        for (let key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
                 let weather_mod = lightningweather.views[key];
                 weather_mod.setIconBaseUrl("chrome://lightningweather/skin/"+icon_set+"/");
+                weather_mod.setTemperatureUnit(temperature_unit);
                 weather_mod.view.addEventListener("viewloaded", lightningweather.onViewLoaded);
                 weather_mod.view.viewBroadcaster.addEventListener(key + "viewresized", lightningweather.onResize.bind(lightningweather, weather_mod));
             }
@@ -208,3 +224,4 @@ var lightningweather = {
 };
 
 window.addEventListener("load", lightningweather.onLoad, false);
+window.setInterval(lightningweather.tryUpdateForecast, 5*60*1000);  // check for forecast update every 5 minutes

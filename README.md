@@ -7,7 +7,16 @@ Install from [addons.mozilla.org](https://addons.mozilla.org/en-US/thunderbird/a
 <img src="https://github.com/tmalch/lightningWeather/blob/master/screenshots/calendar.png" width="75%" alt="Screenshot"/>
 </p>
 
-lightningWeather can use the weather API of [openweathermap.org](http://openweathermap.org), [yahoo](https://www.yahoo.com/news/weather/) or [darksky.net](https://darksky.net/). 
+lightningWeather supports the weather APIs of:
+* [openweathermap.org](http://openweathermap.org) 
+* [yahoo](https://www.yahoo.com/news/weather/)
+* [darksky.net](https://darksky.net/). 
+
+lightningWeather uses free developer accounts of these services. Therefore there are quite tight rate limits
+for the number of requests. openweathermap.org allows 60 requests per minute and darksky.net 1000 requests per day. 
+Only yahoo has no rate limit and should always work.
+
+The forecast is updated every 5 hours.
 
 ## Configuration
 In the preferences dialog you can seek the forecast location and choose the API provider.

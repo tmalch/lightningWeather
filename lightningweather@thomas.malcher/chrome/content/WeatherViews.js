@@ -38,6 +38,7 @@ let logger = Log.repository.getLogger("lightningweather.view");
 function ViewWeatherModule(view) {
     this.view = view;
     this.icon_baseurl = "chrome://lightningweather/skin/default/";
+    this.temperature_unit = "C";
 }
 ViewWeatherModule.prototype.clearWeather = function (mozdate) {
     throw "NOT IMPLEMENTED"
@@ -48,8 +49,19 @@ ViewWeatherModule.prototype.setWeather = function (mozdate, weather) {
 ViewWeatherModule.prototype.setIconBaseUrl = function (icon_baseurl) {
     this.icon_baseurl = icon_baseurl;
 };
+ViewWeatherModule.prototype.setTemperatureUnit = function (unit) {
+    this.temperature_unit = unit;
+};
+
+ViewWeatherModule.prototype.temperatureToUnit = function (temp_c) {
+    if (this.temperature_unit == "C"){
+        return Math.round(temp_c) + "\u2103";
+    }else{
+        return Math.round((temp_c*1.8)+32) + "\u2109";
+    }
+};
 ViewWeatherModule.prototype.clear = function () {
-    var self = this;
+    let self = this;
     let date_list = this.view.getDateList({});
     date_list.forEach(function (dt) {
         self.clearWeather(dt);
@@ -164,7 +176,7 @@ function HourlyViewWeatherModule(view) {
         let temp = parseFloat(weather.temp);
         if (!isNaN(temp)) {
             let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
-            l.setAttribute('value', Math.round(temp) + "C");
+            l.setAttribute('value', this.temperatureToUnit(temp));
             box.appendChild(l);
         }
     };
@@ -266,7 +278,7 @@ function MonthViewWeatherModule(view) {
             let temp = parseFloat(weather.temp);
             if (!isNaN(temp)) {
                 let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
-                l.setAttribute('value', Math.round(temp) + " C");
+                l.setAttribute('value', this.temperatureToUnit(temp));
                 weatherbox.appendChild(l);
             }
         } catch (ex) {
