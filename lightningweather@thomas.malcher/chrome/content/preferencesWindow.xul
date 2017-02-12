@@ -40,7 +40,7 @@
                 <label class="preflabel" control="unit_control" value="Unit:"/>
                 <menulist id="unit_control" preference="units">
                     <menupopup>
-                        <menuitem value="C" label="Celcius"/>
+                        <menuitem value="C" label="Celsius"/>
                         <menuitem value="F" label="Fahrenheit"/>
                     </menupopup>
                 </menulist>
