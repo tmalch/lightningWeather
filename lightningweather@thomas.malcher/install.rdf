@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>lightningweather@thomas.malcher</em:id>
     <em:name>lightningWeather</em:name>
-    <em:version>0.2</em:version>
+    <em:version>0.2.1</em:version>
     <em:creator>Thomas Malcher</em:creator>
     <em:contributor>Jonathan Protzenko (thunderbird-stdlib)</em:contributor>
     <em:description>LightningWeather shows the weather forecast in the background of the calendar so you can easily coordinate your activities with the weather.</em:description>
@@ -15,7 +15,7 @@
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>1.5</em:minVersion>
+        <em:minVersion>31.0</em:minVersion>
         <em:maxVersion>45.*</em:maxVersion>
       </Description>
     </em:targetApplication>

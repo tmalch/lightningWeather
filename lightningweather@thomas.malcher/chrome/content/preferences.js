@@ -50,7 +50,6 @@ lightningweather_prefs = {
                 this.provider_list.push(providers[provider])
             }
         }
-        document.getElementById("unit_control").selectedIndex = 0;
 
         // instantiate
         this.geolookup = new GeoLookup();

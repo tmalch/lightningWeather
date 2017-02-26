@@ -42,7 +42,7 @@ params.document_ref = document;
 Components.utils.import("resource://gre/modules/Log.jsm");
 let root_logger = Log.repository.getLogger("lightningweather");
 root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
-root_logger.level = Log.Level.Info;
+root_logger.level = Log.Level.Warn;
 
 let logger = Log.repository.getLogger("lightningweather.index");
 
