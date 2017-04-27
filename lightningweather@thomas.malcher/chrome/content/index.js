@@ -38,6 +38,7 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
 // reference to the document used by WeatherViews
 params.document_ref = document;
+var prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
 
 Components.utils.import("resource://gre/modules/Log.jsm");
 let root_logger = Log.repository.getLogger("lightningweather");
@@ -45,16 +46,16 @@ root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
 root_logger.level = Log.Level.Warn;
 
 let logger = Log.repository.getLogger("lightningweather.index");
-
+logger.level = Log.Level.Debug;
 
 var lightningweather = {
     views: null,
     storage: SimpleStorage.createCpsStyle("teste"),
     forecastModule: null,
     forecast: null,
-    prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.lightningweather."),
+    prefs: prefsService.getBranch("extensions.lightningweather."),
     tz_service: Components.classes["@mozilla.org/calendar/timezone-service;1"].getService(Components.interfaces.calITimezoneProvider),
-    forecast_timeout: 5*60*60*1000, //duration in ms after which a new Forecast gets requested
+    forecast_timeout: 6*60*60*1000, //duration in ms after which a new Forecast gets requested
     prefObserver: {
         observe: function (subject, topic, data) {
             logger.debug("subject: " + subject + " topic: " + topic + " pref: " + data);
@@ -93,7 +94,8 @@ var lightningweather = {
             if (weatherProviders.hasOwnProperty(provider) && weatherProviders[provider].class == provider_name) {
                 location.tz = lightningweather.tz_service.getTimezone(location.tz || "Europe/Vienna");
                 // use mergeForecast as save_callback for requestForecast
-                return new weatherProviders[provider](location, lightningweather.mergeForecast);
+                let module_prefs = prefsService.getBranch("extensions.lightningweather."+provider_name+".");
+                return new weatherProviders[provider](location, lightningweather.mergeForecast, module_prefs);
             }
         }
         return undefined;

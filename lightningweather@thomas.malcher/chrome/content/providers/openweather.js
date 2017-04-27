@@ -112,11 +112,12 @@ OpenWeathermapModule.prototype.parseForecast = function(http_response) {
     return new Forecast(daily_forecasts_data);
 };
 
-function OpenWeathermapModule(city, callback) {
+function OpenWeathermapModule(city, callback, provider_prefs) {
 //http://api.openweathermap.org/data/2.5/forecast?id=2778067&APPID=c43ae0077ff0a3d68343555c23b97f5f
 //http://api.openweathermap.org/data/2.5/weather?id=2778067&APPID=c43ae0077ff0a3d68343555c23b97f5f
     BaseProvider.call(this, callback, city.tz);
     this.location = city.geo;
     this.storeageId = OpenWeathermapModule.class+this.location.latitude+this.location.longitude;
-    this.url = "http://api.openweathermap.org/data/2.5/forecast?lat="+this.location.latitude+"&lon="+this.location.longitude+"&APPID=c43ae0077ff0a3d68343555c23b97f5f&units=metric";
+    let api_key = provider_prefs.getCharPref("api_key");
+    this.url = "http://api.openweathermap.org/data/2.5/forecast?lat="+this.location.latitude+"&lon="+this.location.longitude+"&APPID="+api_key+"&units=metric";
 }
