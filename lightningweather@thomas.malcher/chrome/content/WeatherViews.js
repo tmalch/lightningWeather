@@ -25,9 +25,9 @@
 
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
-var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule', 'HourlyViewWeatherModule', "params"];
+var EXPORTED_SYMBOLS = ['WeekViewWeatherModule', 'MonthViewWeatherModule', 'HourlyViewWeatherModule', "weatherview_params"];
 
-var params = {
+var weatherview_params = {
     document_ref: this
 };
 
@@ -83,15 +83,15 @@ ViewWeatherModule.prototype.annotate = function (forecast, tz) {
 };
 ViewWeatherModule.prototype.getOrCreateWeatherBox = function (day_col) {
     try {
-        let weatherbox = params.document_ref.getAnonymousElementByAttribute(day_col, "anonid", "weatherbox");
+        let weatherbox = weatherview_params.document_ref.getAnonymousElementByAttribute(day_col, "anonid", "weatherbox");
         if (weatherbox == undefined) {
-            weatherbox = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
+            weatherbox = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "xul:box");
             let orient = day_col.getAttribute("orient");
             weatherbox.setAttribute("orient", orient);
             weatherbox.setAttribute("flex", "1");
             weatherbox.setAttribute("anonid", "weatherbox");
 
-            let stack = params.document_ref.getAnonymousElementByAttribute(day_col, "anonid", "boxstack");
+            let stack = weatherview_params.document_ref.getAnonymousElementByAttribute(day_col, "anonid", "boxstack");
             stack.insertBefore(weatherbox, day_col.topbox || day_col.dayitems);
         }
         return weatherbox
@@ -156,7 +156,7 @@ function HourlyViewWeatherModule(view) {
         // calculate duration pixel as the difference between
         // start pixel and end pixel to avoid rounding errors.
 
-        let box = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "box");
+        let box = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "box");
         if (parent_orientation == "vertical") {
             box.setAttribute("orient", "vertical");
             box.setAttribute("height", durPix);
@@ -175,7 +175,7 @@ function HourlyViewWeatherModule(view) {
         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
         let temp = parseFloat(weather.temp);
         if (!isNaN(temp)) {
-            let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
+            let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
             l.setAttribute('value', this.temperatureToUnit(temp));
             box.appendChild(l);
         }
@@ -269,7 +269,7 @@ function MonthViewWeatherModule(view) {
     this.setWeather = function (mozdate, weather) {
         try {
             let day_box = this.view.findDayBoxForDate(mozdate);
-            //let weatherbox = params.document_ref.getAnonymousElementByAttribute(day_box, "anonid", "weatherbox");
+            //let weatherbox = weatherview_params.document_ref.getAnonymousElementByAttribute(day_box, "anonid", "weatherbox");
             let weatherbox = this.getOrCreateWeatherBox(day_box);
             if (!weatherbox ){
                 weatherbox = day_box;
@@ -277,7 +277,7 @@ function MonthViewWeatherModule(view) {
             weatherbox.setAttribute("style", this.base_style + "background-image: url(" + this.icon_baseurl + weather.icon + ") !important;");
             let temp = parseFloat(weather.temp);
             if (!isNaN(temp)) {
-                let l = params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
+                let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value', this.temperatureToUnit(temp));
                 weatherbox.appendChild(l);
             }

@@ -37,7 +37,7 @@ Cu.import("chrome://lightningweather/content/providers/darksky.js", weatherProvi
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
 // reference to the document used by WeatherViews
-params.document_ref = document;
+weatherview_params.document_ref = document;
 var prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
 
 Components.utils.import("resource://gre/modules/Log.jsm");
