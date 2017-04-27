@@ -79,6 +79,9 @@ function mergeForecastElements(e1, e2) {
     return merged
 }
 
+/*
+    A Forecast is a Sequence of ForecastElements
+ */
 var IForecast = {
     forEach: function (func) {
         this._data.forEach(func);
@@ -103,8 +106,6 @@ var IForecast = {
         if (!(other instanceof Forecast)) {
             other = new Forecast(other);
         }
-        //other.updateGranularity();
-        //this.updateGranularity();
 
         if (other.granularity != undefined && this.granularity != undefined && other.granularity != this.granularity) {
             logger.info("cannot combine, granularity is different " + other.granularity + " != " + this.granularity);
@@ -113,8 +114,6 @@ var IForecast = {
         other.forEach(function (elem) {
             this.add(elem);
         }.bind(this));
-
-        //this.updateGranularity();
     },
     add: function (elem) {
         let i = this._data.findIndex(function (e) {

@@ -44,9 +44,7 @@ Components.utils.import("resource://gre/modules/Log.jsm");
 let root_logger = Log.repository.getLogger("lightningweather");
 root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
 root_logger.level = Log.Level.Warn;
-
 let logger = Log.repository.getLogger("lightningweather.index");
-logger.level = Log.Level.Debug;
 
 var lightningweather = {
     views: null,
@@ -71,7 +69,7 @@ var lightningweather = {
                 }
             }else if (data == "icon_set"){
                 let icon_set = lightningweather.prefs.getCharPref("icon_set");
-                for (var key in lightningweather.views) {
+                for (let key in lightningweather.views) {
                     if (lightningweather.views.hasOwnProperty(key)) {
                         lightningweather.views[key].setIconBaseUrl("chrome://lightningweather/skin/"+icon_set+"/");
                     }
@@ -80,7 +78,7 @@ var lightningweather = {
             }else if (data == "units"){
                 let unit = lightningweather.prefs.getCharPref("units");
                 logger.debug("Selected Unit" + unit);
-                for (var key in lightningweather.views) {
+                for (let key in lightningweather.views) {
                     if (lightningweather.views.hasOwnProperty(key)) {
                         lightningweather.views[key].setTemperatureUnit(unit);
                     }
@@ -102,22 +100,21 @@ var lightningweather = {
     },
     onLoad: function () {
         lightningweather.prefs.addObserver("", lightningweather.prefObserver, false);
+
+        let icon_set = "default";
+        let temperature_unit = "C";
+        try {
+            temperature_unit = lightningweather.prefs.getCharPref("units");
+        }catch(e) { }
+        try {
+            icon_set = lightningweather.prefs.getCharPref("icon_set");
+        }catch(e) { }
         lightningweather.views = {
             "day": new HourlyViewWeatherModule(document.getElementById("day-view")),
             "week": new HourlyViewWeatherModule(document.getElementById("week-view")),
             "month": new MonthViewWeatherModule(document.getElementById("month-view")),
             "multiweek": new MonthViewWeatherModule(document.getElementById("multiweek-view"))
         };
-        try {
-            var icon_set = lightningweather.prefs.getCharPref("icon_set");
-        }catch(e) {
-            icon_set = "default"
-        }
-        try {
-            var temperature_unit = lightningweather.prefs.getCharPref("units");
-        }catch(e) {
-            temperature_unit = "C"
-        }
         for (let key in lightningweather.views) {
             if (lightningweather.views.hasOwnProperty(key)) {
                 let weather_mod = lightningweather.views[key];
@@ -186,6 +183,7 @@ var lightningweather = {
         if (lightningweather.forecast instanceof Forecast) {
             forecast.combine(lightningweather.forecast);
             lightningweather.forecast = forecast;
+            lightningweather.updateCurrentView();
             lightningweather.saveForecast();
         } else { // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
@@ -197,8 +195,9 @@ var lightningweather = {
                     logger.debug("No forecast in Storage!");
                     let existing_forecast = new Forecast();
                 }
-                forecast.combine(lightningweather.forecast);
+                forecast.combine(existing_forecast);
                 lightningweather.forecast = forecast;
+                lightningweather.updateCurrentView();
                 lightningweather.saveForecast();
             });
         }

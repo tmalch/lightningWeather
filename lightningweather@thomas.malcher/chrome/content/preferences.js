@@ -160,7 +160,7 @@ lightningweather_prefs = {
         }else{
             let error_msg_elem = document.getElementById("error_msg_container");
             if(this.location_list.itemCount == 0 || this.location_list.getItemAtIndex(0).value == NO_RESULTS_VALUE){
-                error_msg_elem.innerHTML = "Please enter a query";
+                error_msg_elem.innerHTML = "Please enter a valid query";
                 error_msg_elem.openPopup(this.location_list);
             }else{
                 error_msg_elem.innerHTML = "Please select a location";
