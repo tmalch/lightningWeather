@@ -43,7 +43,7 @@ function ViewWeatherModule(view) {
 ViewWeatherModule.prototype.clearWeather = function (mozdate) {
     throw "NOT IMPLEMENTED"
 };
-ViewWeatherModule.prototype.setWeather = function (mozdate, weather) {
+ViewWeatherModule.prototype.setWeather = function (mozdate, forecast_elem) {
     throw "NOT IMPLEMENTED"
 };
 ViewWeatherModule.prototype.setIconBaseUrl = function (icon_baseurl) {
@@ -67,6 +67,19 @@ ViewWeatherModule.prototype.clear = function () {
         self.clearWeather(dt);
     });
 };
+ViewWeatherModule.prototype.checkAndMarkOld = function(box, forecast_elem){
+    // if forecast for future was last updated more than 12 hours ago
+    if (forecast_elem.timestamp > Date.now() && forecast_elem.published < Date.now()-60*1000){
+        let spacer = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
+        spacer.setAttribute('flex', "1");
+        box.appendChild(spacer);
+        let l2 = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
+        l2.setAttribute("style", "width: 20px; height: 20px; " +
+            "background-size: contain; background-repeat: no-repeat; background-position: right top; " +
+            "background-image: url(" + this.icon_baseurl + "/out_of_sync.svg) !important;");
+        box.appendChild(l2);
+    }
+};
 ViewWeatherModule.prototype.annotate = function (forecast, tz) {
     var self = this;
     let local_startDate = self.view.mStartDate.clone();
@@ -77,7 +90,7 @@ ViewWeatherModule.prototype.annotate = function (forecast, tz) {
         mozDate.isDate = true;
         if (mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
             logger.debug("render forecast for " + mozDate);
-            self.setWeather(mozDate, elem.weather);
+            self.setWeather(mozDate, elem);
         }
     });
 };
@@ -106,8 +119,6 @@ ViewWeatherModule.prototype.clearWeatherBox = function (box) {
 };
 
 
-
-
 WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 /***
  *  can be used for Day and WeekView, can only show one Icon for the whole day
@@ -115,7 +126,8 @@ WeekViewWeatherModule.prototype = Object.create(ViewWeatherModule);
 function WeekViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     var self = this;
-    this.setWeather = function (mozdate, weather) {
+    this.setWeather = function (mozdate, forecast_elem) {
+        let weather = forecast_elem.weather;
         try {
             let day_col = this.view.findColumnForDate(mozdate);
             let orient = day_col.column.getAttribute("orient");
@@ -144,7 +156,7 @@ HourlyViewWeatherModule.prototype = Object.create(ViewWeatherModule.prototype);
 function HourlyViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     var self = this;
-    this.base_style = "opacity: 0.4; background-size: contain; background-repeat: repeat-y; background-position: right center; ";
+    this.base_style = "opacity: 0.4; background-size: contain; background-repeat: repeat-y; background-position: center center; ";
 
     this.makeBox = function (startMin, endMin, pixelsPerMinute, parent_orientation) {
         if (endMin <= startMin) {
@@ -165,20 +177,25 @@ function HourlyViewWeatherModule(view) {
             box.setAttribute("orient", "horizontal");
             box.setAttribute("width", durPix);
         }
-
         return box;
     };
 
-    this.annotateBox = function(box, weather){
+    this.annotateBox = function(box, forecast_elem){
+        let weather = forecast_elem.weather;
         let icon = this.icon_baseurl + weather.icon;
         box.setAttribute("style", this.base_style + "background-image: url(" + icon + ") !important;");
         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
         let temp = parseFloat(weather.temp);
+        let hbox = box;
         if (!isNaN(temp)) {
+            hbox = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "hbox");
+            hbox.setAttribute('flex', '1');
+            box.appendChild(hbox);
             let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
             l.setAttribute('value', this.temperatureToUnit(temp));
-            box.appendChild(l);
+            hbox.appendChild(l);
         }
+        this.checkAndMarkOld(hbox, forecast_elem);
     };
 
     this.annotate = function (forecast, tz) {
@@ -211,7 +228,7 @@ function HourlyViewWeatherModule(view) {
                     if (curStartMin < startMin) {
                         // insert a filling box
                         let b = self.makeBox(curStartMin, startMin, day_col.pixelsPerMinute, orient);
-                        self.annotateBox(b, elem.weather);
+                        self.annotateBox(b, elem); // use forecast element for the whole day
                         weatherbox.appendChild(b);
                         curStartMin = startMin;
                     }
@@ -223,7 +240,7 @@ function HourlyViewWeatherModule(view) {
                     }
                     let box = self.makeBox(curStartMin, endMin, day_col.pixelsPerMinute, orient);
                     if (box) {
-                        self.annotateBox(box, elem2.weather);
+                        self.annotateBox(box, elem2);
                         weatherbox.appendChild(box);
                         curStartMin = endMin;
                     }
@@ -231,11 +248,11 @@ function HourlyViewWeatherModule(view) {
                 // nested forecast doesn't fill the whole day
                 if (curStartMin < day_col.mEndMin) {
                     let b = self.makeBox(curStartMin, day_col.mEndMin, day_col.pixelsPerMinute, orient); // make a box till end of the day
-                    self.annotateBox(b, elem.weather);
+                    self.annotateBox(b, elem); // use forecast element for the whole day
                     weatherbox.appendChild(b);
                 }
             } else {
-                self.annotateBox(weatherbox, elem.weather);
+                self.annotateBox(weatherbox, elem);
             }
         });
     };
@@ -266,21 +283,27 @@ function MonthViewWeatherModule(view) {
     ViewWeatherModule.call(this, view);
     var self = this;
     this.base_style = "opacity: 0.4; background-size: contain !important; background-position: right bottom !important; background-repeat: no-repeat !important;";
-    this.setWeather = function (mozdate, weather) {
+    this.setWeather = function (mozdate, forecast_elem) {
+        let weather = forecast_elem.weather;
         try {
             let day_box = this.view.findDayBoxForDate(mozdate);
-            //let weatherbox = weatherview_params.document_ref.getAnonymousElementByAttribute(day_box, "anonid", "weatherbox");
             let weatherbox = this.getOrCreateWeatherBox(day_box);
             if (!weatherbox ){
                 weatherbox = day_box;
             }
             weatherbox.setAttribute("style", this.base_style + "background-image: url(" + this.icon_baseurl + weather.icon + ") !important;");
+
+            let hbox = weatherbox;
             let temp = parseFloat(weather.temp);
             if (!isNaN(temp)) {
+                hbox = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "hbox");
+                hbox.setAttribute('flex', '1');
+                weatherbox.appendChild(hbox);
                 let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value', this.temperatureToUnit(temp));
-                weatherbox.appendChild(l);
+                hbox.appendChild(l);
             }
+            this.checkAndMarkOld(hbox, forecast_elem);
         } catch (ex) {
             logger.error(ex)
         }
