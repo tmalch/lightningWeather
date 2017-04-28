@@ -67,25 +67,24 @@ ViewWeatherModule.prototype.clear = function () {
         self.clearWeather(dt);
     });
 };
-ViewWeatherModule.prototype.checkAndMarkOld = function(box, forecast_elem){
-    // if forecast for future was last updated more than 12 hours ago
-    if (forecast_elem.timestamp > Date.now() && forecast_elem.published < Date.now()-60*1000){
-        let spacer = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "spacer");
-        spacer.setAttribute('flex', "1");
-        box.appendChild(spacer);
-        let l2 = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
-        l2.setAttribute("style", "width: 20px; height: 20px; " +
-            "background-size: contain; background-repeat: no-repeat; background-position: right top; " +
-            "background-image: url(" + this.icon_baseurl + "/out_of_sync.svg) !important;");
-        box.appendChild(l2);
+
+ViewWeatherModule.prototype.forecastTooOld = function(forecast_elem){
+    // if forecast for future was last updated more than 24 hours ago
+    if (forecast_elem.timestamp > Date.now() && forecast_elem.published < Date.now()-24*60*60*1000){
+        return true;
     }
+    return false;
 };
+
 ViewWeatherModule.prototype.annotate = function (forecast, tz) {
     var self = this;
     let local_startDate = self.view.mStartDate.clone();
     local_startDate.timezone = tz;
     logger.info("show " + forecast.length + " Forecasts from date: " + local_startDate);
     forecast.forEachFrom(local_startDate.nativeTime / 1000, function (elem) {
+        if (self.forecastTooOld(elem)){
+            return;
+        }
         let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz/*self.view.timezone*/);
         mozDate.isDate = true;
         if (mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
@@ -181,21 +180,19 @@ function HourlyViewWeatherModule(view) {
     };
 
     this.annotateBox = function(box, forecast_elem){
+        if (self.forecastTooOld(forecast_elem)){
+            return;
+        }
         let weather = forecast_elem.weather;
         let icon = this.icon_baseurl + weather.icon;
         box.setAttribute("style", this.base_style + "background-image: url(" + icon + ") !important;");
         //box.setAttribute("style", box.getAttribute("style")+"border: 2px solid red;");
         let temp = parseFloat(weather.temp);
-        let hbox = box;
         if (!isNaN(temp)) {
-            hbox = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "hbox");
-            hbox.setAttribute('flex', '1');
-            box.appendChild(hbox);
             let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
             l.setAttribute('value', this.temperatureToUnit(temp));
-            hbox.appendChild(l);
+            box.appendChild(l);
         }
-        this.checkAndMarkOld(hbox, forecast_elem);
     };
 
     this.annotate = function (forecast, tz) {
@@ -293,17 +290,12 @@ function MonthViewWeatherModule(view) {
             }
             weatherbox.setAttribute("style", this.base_style + "background-image: url(" + this.icon_baseurl + weather.icon + ") !important;");
 
-            let hbox = weatherbox;
             let temp = parseFloat(weather.temp);
             if (!isNaN(temp)) {
-                hbox = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "hbox");
-                hbox.setAttribute('flex', '1');
-                weatherbox.appendChild(hbox);
                 let l = weatherview_params.document_ref.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "description");
                 l.setAttribute('value', this.temperatureToUnit(temp));
-                hbox.appendChild(l);
+                weatherbox.appendChild(l);
             }
-            this.checkAndMarkOld(hbox, forecast_elem);
         } catch (ex) {
             logger.error(ex)
         }
