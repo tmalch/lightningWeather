@@ -38,7 +38,7 @@
             </hbox>
             <hbox align="center">
                 <label class="preflabel" control="unit_control" value="Unit:"/>
-                <menulist id="unit_control" preference="units">
+                <menulist id="unit_control">
                     <menupopup>
                         <menuitem value="C" label="Celsius"/>
                         <menuitem value="F" label="Fahrenheit"/>

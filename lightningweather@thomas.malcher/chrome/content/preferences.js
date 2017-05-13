@@ -58,6 +58,7 @@ lightningweather_prefs = {
         for(let provider of this.provider_list){
             provider_list_inp.appendItem(provider.class, provider.class, provider.class+" Weather API");
         }
+        let unit_list = document.getElementById("unit_control");
 
         // retrieve default values
         let default_provider_idx = 0;
@@ -73,11 +74,24 @@ lightningweather_prefs = {
             default_provider_idx = this.provider_list.findIndex(p => p.class == "yahoo");
             this.query = "Graz, AT";
         }
+        let default_unit_idx = 0;
+        try {
+            let default_unit = this.prefs.getCharPref("units");
+            logger.debug("previously saved unit: " + default_unit);
+            for(let i=0; i < unit_list.itemCount; i++){
+                if(unit_list.getItemAtIndex(i).value == default_unit){
+                    default_unit_idx = i;
+                    logger.debug("found saved index: " + default_unit_idx);
+                }
+            }
+        }catch(e) {}
 
         // populate window based on default values
         this.location_list.inputField.placeholder = this.query;
         provider_list_inp.selectedIndex = default_provider_idx;
         provider_list_inp.doCommand();
+
+        unit_list.selectedIndex = default_unit_idx;
 
         this.geolookup.locations(this.query, function(locations){
             this.setLocationList(locations);
@@ -150,6 +164,10 @@ lightningweather_prefs = {
     },
 
     apply: function(){
+        let unit_list = document.getElementById("unit_control");
+        logger.debug("save unit: " + unit_list.selectedItem.value);
+        this.prefs.setCharPref("units", unit_list.selectedItem.value);
+
         let selected_location = this.location_list.selectedItem;
         if(selected_location && selected_location.value != NO_RESULTS_VALUE){
             logger.debug("save Prefs");
