@@ -62,7 +62,7 @@ ViewWeatherModule.prototype.temperatureToUnit = function (temp_c) {
 };
 ViewWeatherModule.prototype.clear = function () {
     let self = this;
-    let date_list = this.view.getDateList({});
+    let date_list = this.view.mDateList || this.view.getDateList({}); // one of those ways should always work
     date_list.forEach(function (dt) {
         self.clearWeather(dt);
     });
