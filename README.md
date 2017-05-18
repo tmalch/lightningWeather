@@ -28,3 +28,20 @@ In the preferences dialog you can seek the forecast location and choose the API 
 **Note:** The forecast at eg 6 pm shows the weather at 6 pm for the selected forecast location, no matter in which timezone the location is.
 
 Assume you are in Paris and your selected forecast location is NY then the forecast at 6 pm is the weather in NY at 6 pm and not at 12 am.
+
+## Changelog
+
+v0.3.2
+- fix bug which led to infinite api requests
+
+v0.3.1
+- hide forecast if it is older than 24hr
+- fix bug when setting unit in preferences on Windows
+- workaround bug in Lightning 5.4 (Thunderbird 52)
+
+v0.2.1
+- fix bug in setting preference for unit C/F
+
+v.2
+- add preference for unit C/F
+

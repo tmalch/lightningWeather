@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>lightningweather@thomas.malcher</em:id>
     <em:name>lightningWeather</em:name>
-    <em:version>0.3.1</em:version>
+    <em:version>0.3.2</em:version>
     <em:creator>Thomas Malcher</em:creator>
     <em:contributor>Jonathan Protzenko (thunderbird-stdlib)</em:contributor>
     <em:contributor>Simone Griesmayr (icon)</em:contributor>
