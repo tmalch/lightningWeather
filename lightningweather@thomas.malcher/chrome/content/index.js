@@ -46,6 +46,7 @@ root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
 root_logger.level = Log.Level.Warn;
 let logger = Log.repository.getLogger("lightningweather.index");
 
+
 var lightningweather = {
     views: null,
     storage: SimpleStorage.createCpsStyle("teste"),
@@ -177,8 +178,9 @@ var lightningweather = {
      * @param forecast
      */
     mergeForecast: function (forecast) {
-        if (!forecast) {
-            return;  // failed
+        if (!forecast || !(forecast instanceof Forecast) || forecast.length == 0) {
+            logger.debug("empty Forecast -> nothing to merge, nothing to update");
+            return;
         }
         if (lightningweather.forecast instanceof Forecast) {
             forecast.combine(lightningweather.forecast);
@@ -187,13 +189,12 @@ var lightningweather = {
             lightningweather.saveForecast();
         } else { // check storage
             lightningweather.storage.get(lightningweather.forecastModule.storeageId, function (forecast_data) {
+                let existing_forecast = new Forecast();
                 if (forecast_data) {
                     logger.debug("found forecast in Storage " + forecast_data.length);
-                    let existing_forecast = new Forecast(forecast_data);
-
+                    existing_forecast = new Forecast(forecast_data);
                 } else { // no forecast in object or storage -> request
                     logger.debug("No forecast in Storage!");
-                    let existing_forecast = new Forecast();
                 }
                 forecast.combine(existing_forecast);
                 lightningweather.forecast = forecast;

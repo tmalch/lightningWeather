@@ -243,30 +243,31 @@ function Forecast(data) {
 }
 
 
-logger = Log.repository.getLogger("lightningweather.provider");
+let provider_logger = Log.repository.getLogger("lightningweather.provider");
+
 BaseProvider.prototype.error = function () {
-    logger.info("request error " + this.req.status + " -- " + this.req.statusText);
+    provider_logger.info("request error " + this.req.status + " -- " + this.req.statusText);
     this.save_callback(new Forecast())
 };
 BaseProvider.prototype.success = function (event) {
-    logger.debug("got response ");
+    provider_logger.debug("got response ");
     let forecast = this.parseForecast(event.currentTarget);
-    logger.info("got forecast of length " + forecast.length);
+    provider_logger.info("got forecast of length " + forecast.length);
     this.save_callback(forecast);
 };
 BaseProvider.prototype.requestForecast = function () {
     if (this.url == null) {
-        logger.error("City not given");
+        provider_logger.error("City not given");
         this.save_callback(new Forecast())
     }
     if (this.req.readyState != 0 && this.req.readyState != 4) {
-        logger.trace("request already running - state: " + this.req.readyState);
+        provider_logger.trace("request already running - state: " + this.req.readyState);
         return;  // already waiting for a response -> no need to request it again
     }
-    logger.debug("going to request: " + this.url);
+    provider_logger.debug("going to request: " + this.url);
     this.req.open("GET", this.url);
     this.req.send();
-    logger.info("request sent");
+    provider_logger.info("request sent");
 };
 BaseProvider.prototype.parseForecast = function () {
     throw "NOT IMPLEMENTED"
@@ -289,7 +290,7 @@ function GeoLookup() {
     this.req.timeout = 2000;
 }
 GeoLookup.prototype.error = function (callback, event) {
-    logger.debug("request error " + this.req.status + " -- " + this.req.statusText);
+    provider_logger.debug("request error " + this.req.status + " -- " + this.req.statusText);
     callback([]);
     // clone request to remove all eventListeners
     let new_req = new XMLHttpRequest();
@@ -310,7 +311,7 @@ GeoLookup.prototype.locations = function (query, callback) {
     let q = "?q=select woeid, name, country, admin1,admin2,admin3, centroid, timezone from geo.places where text = \"" + query + "\" and placeTypeName = \"Town\"&format=json";
 
     if (this.req.readyState != 0 && this.req.readyState != 4) {
-        logger.debug("request already running - state: " + this.req.readyState);
+        provider_logger.debug("request already running - state: " + this.req.readyState);
         this.req.abort();
     }
     this.req.addEventListener("error", this.error.bind(this, callback));
@@ -324,14 +325,14 @@ GeoLookup.prototype.parseLocations = function (http_response) {
     try {
         var response = JSON.parse(http_response.responseText);
         if (response.error != undefined) {
-            logger.info("ERROR: " + http_response.responseText);
+            provider_logger.info("ERROR: " + http_response.responseText);
             return [];
         }
         if (response.query.results == null) {
             return [];
         }
     } catch (e) {
-        logger.error(e);
+        provider_logger.error(e);
         return [];
     }
 
