@@ -1,7 +1,7 @@
 # lightningWeather
 This is a Thunderbird Addon that shows the weather forecast in the background of the Calendar.
 
-Install from [addons.mozilla.org](https://addons.mozilla.org/en-US/thunderbird/addon/lightningweather)
+Install from [addons.mozilla.org](https://addons.thunderbird.net/en-US/thunderbird/addon/lightningweather/)
 
 <p align=center>
 <img src="https://github.com/tmalch/lightningWeather/blob/master/screenshots/calendar.png" width="75%" alt="Screenshot"/>
@@ -30,6 +30,8 @@ In the preferences dialog you can seek the forecast location and choose the API 
 Assume you are in Paris and your selected forecast location is NY then the forecast at 6 pm is the weather in NY at 6 pm and not at 12 am.
 
 ## Changelog
+v0.4.0
+- add support for Thunderbird 60.*
 
 v0.3.2
 - fix bug which led to infinite api requests
