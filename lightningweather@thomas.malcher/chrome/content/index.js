@@ -40,10 +40,10 @@ Components.utils.import("chrome://lightningweather/content/Forecast.js");
 weatherview_params.document_ref = document;
 var prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
 
-Components.utils.import("resource://gre/modules/Log.jsm");
+Components.utils.import("resource://lightningweather/modules/Log.jsm");
 let root_logger = Log.repository.getLogger("lightningweather");
 root_logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
-root_logger.level = Log.Level.Warn;
+root_logger.level = Log.Level.Debug;
 let logger = Log.repository.getLogger("lightningweather.index");
 
 

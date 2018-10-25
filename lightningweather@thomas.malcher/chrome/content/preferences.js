@@ -30,7 +30,7 @@ Components.utils.import("chrome://lightningweather/content/providers/darksky.js"
 //Cu.import("chrome://lightningweather/content/providers/combined.js", providers);
 
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
-Components.utils.import("resource://gre/modules/Log.jsm");
+Components.utils.import("resource://lightningweather/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.preferences");
 
 var NO_RESULTS_VALUE = "_";
