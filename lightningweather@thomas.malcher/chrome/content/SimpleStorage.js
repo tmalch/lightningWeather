@@ -302,20 +302,27 @@ function SimpleStorageIterator(aSimpleStorage) {
 
 SimpleStorageIterator.prototype = {
 
-  get: function _SimpleStorage_get (aKey) (function (finish) {
-    this.get(aKey, function (result) finish(result));
-  }).bind(this.ss),
+  get: function _SimpleStorage_get (aKey) {
+  	return (function (finish) { 
+  		this.get(aKey, (result) => finish(result)); 
+  	}).bind(this.ss)
+  },
 
-  set: function _SimpleStorage_set (aKey, aValue) (function (finish) {
-    this.set(aKey, aValue, function (result) finish(result));
-  }).bind(this.ss),
+  set: function _SimpleStorage_set (aKey, aValue) {
+  	return (function (finish) {
+    	this.set(aKey, aValue, (result) => finish(result));
+  	}).bind(this.ss)
+  },
 
-  has: function _SimpleStorage_has (aKey) (function (finish) {
-    this.has(aKey, function (result) finish(result));
-  }).bind(this.ss),
+  has: function _SimpleStorage_has (aKey) {
+  	return (function (finish) {
+    	this.has(aKey, (result) => finish(result));
+  	}).bind(this.ss)
+  },
 
-  remove: function _SimpleStorage_remove (aKey) (function (finish) {
-    this.remove(aKey, function (result) finish(result));
-  }).bind(this.ss),
-
+  remove: function _SimpleStorage_remove (aKey) {
+  	return (function (finish) {
+    	this.remove(aKey, (result) => finish(result));
+  	}).bind(this.ss)
+  },
 }
