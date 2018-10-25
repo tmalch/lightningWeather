@@ -26,7 +26,6 @@
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
-const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 Components.utils.import("resource://gre/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.provider.openweather");
 

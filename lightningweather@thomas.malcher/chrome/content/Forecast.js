@@ -22,13 +22,12 @@
  SOFTWARE.
  */
 
-
-const XMLHttpRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
-
 var EXPORTED_SYMBOLS = ['Forecast', 'BaseProvider', 'GeoLookup'];
 
 Components.utils.import("resource://gre/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.forecast");
+
+Components.utils.importGlobalProperties(["XMLHttpRequest"]);
 
 /* A ForecastElement is an obj with the following attributes
  ForecastElement(){
