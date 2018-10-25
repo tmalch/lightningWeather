@@ -24,7 +24,7 @@
 
 
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
-Components.utils.import("resource://lightningweather/modules/Log.jsm");
+Components.utils.import("resource://gre/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.provider.darksky");
 
 

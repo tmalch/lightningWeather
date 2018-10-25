@@ -31,7 +31,7 @@ var weatherview_params = {
     document_ref: this
 };
 
-Components.utils.import("resource://lightningweather/modules/Log.jsm");
+Components.utils.import("resource://gre/modules/Log.jsm");
 let logger = Log.repository.getLogger("lightningweather.view");
 
 

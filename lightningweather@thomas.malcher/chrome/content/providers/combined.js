@@ -25,6 +25,7 @@
 
 Components.utils.import("chrome://lightningweather/content/Forecast.js");
 
+const XMLHttpRequest  = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1", "nsIXMLHttpRequest");
 
 var EXPORTED_SYMBOLS = ['CombinedWeatherModule'];
 
