@@ -51,7 +51,7 @@ OpenWeathermapModule.prototype.parseForecast = function(http_response) {
     }
 
     let list = response.list.map(function(elem){
-        let datetime = cal.jsDateToDateTime(new Date(elem.dt*1000)).getInTimezone(self.tz);
+        let datetime = cal.dtz.jsDateToDateTime(new Date(elem.dt*1000)).getInTimezone(self.tz);
         let date = datetime.clone();
         date.isDate = true;
         return {

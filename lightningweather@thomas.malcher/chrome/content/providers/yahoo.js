@@ -47,7 +47,7 @@ YahooWeatherModule.prototype.parseForecast = function(http_response){
         logger.debug(JSON.stringify(results));
         let daily_forecasts_data = results.channel.map(function(elem){
             let forecast_elem = elem.item.forecast;
-            let date = cal.jsDateToDateTime(new Date(forecast_elem.date), self.tz);
+            let date = cal.dtz.jsDateToDateTime(new Date(forecast_elem.date), self.tz);
             date.isDate = true;
             return {date: date,
                 timestamp: date.nativeTime/1000,

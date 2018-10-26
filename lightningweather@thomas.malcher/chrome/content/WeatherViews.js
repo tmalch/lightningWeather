@@ -85,7 +85,7 @@ ViewWeatherModule.prototype.annotate = function (forecast, tz) {
         if (self.forecastTooOld(elem)){
             return;
         }
-        let mozDate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz/*self.view.timezone*/);
+        let mozDate = cal.dtz.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz/*self.view.timezone*/);
         mozDate.isDate = true;
         if (mozDate.compare(self.view.endDate) <= 0) { // mozDate < endDate
             logger.debug("render forecast for " + mozDate);
@@ -201,7 +201,7 @@ function HourlyViewWeatherModule(view) {
         logger.info("show " + forecast.length + " Forecasts from date: " + local_startDate);
 
         forecast.forEachFrom(local_startDate.nativeTime / 1000, function (elem) {
-            let mozdate = cal.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz); /*self.view.timezone*/
+            let mozdate = cal.dtz.jsDateToDateTime(new Date(elem.timestamp)).getInTimezone(tz); /*self.view.timezone*/
             mozdate.isDate = true;
             let day_entry = self.view.findColumnForDate(mozdate);
             if (!day_entry) {
@@ -217,7 +217,7 @@ function HourlyViewWeatherModule(view) {
                 let curStartMin = day_col.mStartMin;
                 elem.nestedForecast.sort();
                 elem.nestedForecast.forEach(function (elem2) {
-                    let mozdatetime = cal.jsDateToDateTime(new Date(elem2.timestamp)).getInTimezone(tz); /*self.view.timezone*/
+                    let mozdatetime = cal.dtz.jsDateToDateTime(new Date(elem2.timestamp)).getInTimezone(tz); /*self.view.timezone*/
                     logger.trace("render nested forecast for " + mozdatetime);
                     let startMin = mozdatetime.hour * 60 + mozdatetime.minute;
                     let endMin = startMin + elem2.period;
