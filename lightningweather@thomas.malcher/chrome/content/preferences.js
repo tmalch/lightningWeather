@@ -24,8 +24,7 @@
 
 var providers = {};
 Components.utils.import("chrome://lightningweather/content/providers/openweather.js", providers);
-Components.utils.import("chrome://lightningweather/content/providers/openweather.js", providers);
-Components.utils.import("chrome://lightningweather/content/providers/yahoo.js", providers);
+//Components.utils.import("chrome://lightningweather/content/providers/yahoo.js", providers);
 Components.utils.import("chrome://lightningweather/content/providers/darksky.js", providers);
 //Cu.import("chrome://lightningweather/content/providers/combined.js", providers);
 

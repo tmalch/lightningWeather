@@ -131,8 +131,8 @@ var lightningweather = {
             logger.info("Init Use ForecastModule: " + provider_instance_description.provider_name + " " + JSON.stringify(provider_instance_description.location));
             lightningweather.forecastModule = lightningweather.createForecastModule(provider_instance_description.provider_name, provider_instance_description.location);
         } catch (e) {
-            logger.error("Error in reading Preferences: use default hardcoded ForecastModule: yahoo Graz", e);
-            lightningweather.forecastModule = lightningweather.createForecastModule("yahoo", {"id":"548536", "tz":"Europe/Vienna", "geo":{"latitude":"47.068562","longitude":"15.44318"}});
+            logger.error("Error in reading Preferences: use default hardcoded ForecastModule: darksky Graz", e);
+            lightningweather.forecastModule = lightningweather.createForecastModule("darksky", {"id":"548536", "tz":"Europe/Vienna", "geo":{"latitude":"47.068562","longitude":"15.44318"}});
         }
 
         //\\ get or load and request
