@@ -9,12 +9,10 @@ Install from [addons.mozilla.org](https://addons.thunderbird.net/en-US/thunderbi
 
 lightningWeather supports the weather APIs of:
 * [openweathermap.org](http://openweathermap.org) 
-* [yahoo](https://www.yahoo.com/news/weather/)
 * [darksky.net](https://darksky.net/). 
 
 lightningWeather uses free developer accounts of these services. Therefore there are quite tight rate limits
 for the number of requests. openweathermap.org allows 60 requests per minute and darksky.net 1000 requests per day. 
-Only yahoo has no rate limit and should always work.
 
 The forecast is updated every 5 hours.
 
@@ -30,6 +28,9 @@ In the preferences dialog you can seek the forecast location and choose the API 
 Assume you are in Paris and your selected forecast location is NY then the forecast at 6 pm is the weather in NY at 6 pm and not at 12 am.
 
 ## Changelog
+v0.5.0
+- remove broken support for Yahoo Weather API and Geocoder API. 
+
 v0.4.0
 - add support for Thunderbird 60.*
 
