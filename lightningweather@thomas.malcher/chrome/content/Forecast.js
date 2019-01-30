@@ -284,6 +284,7 @@ function BaseProvider(callback, tz) {
     this.req.addEventListener("load", this.success.bind(this));
 }
 
+
 function GeoLookup() {
     this.req = new XMLHttpRequest();
     this.req.timeout = 2000;
@@ -305,9 +306,14 @@ GeoLookup.prototype.success = function (callback, event) {
     new_req.timeout = this.req.timeout;
     this.req = new_req;
 };
+
 GeoLookup.prototype.locations = function (query, callback) {
-    query = query + " "; // returns better results
-    let q = "?q=select woeid, name, country, admin1,admin2,admin3, centroid, timezone from geo.places where text = \"" + query + "\" and placeTypeName = \"Town\"&format=json";
+
+	let params =      "?" + "app_id=xYsBmRETfFtFtIe1ZKUb";
+	params = params + "&" + "app_code=TDDQb0gn-Dmo3WqGPee_Og";
+    params = params + "&" + "gen=9";
+    params = params + "&" + "searchtext=" + query;
+    params = params + "&" + "locationattributes=adminInfo,timeZone";
 
     if (this.req.readyState != 0 && this.req.readyState != 4) {
         provider_logger.debug("request already running - state: " + this.req.readyState);
@@ -317,37 +323,33 @@ GeoLookup.prototype.locations = function (query, callback) {
     this.req.addEventListener("abort", this.error.bind(this, callback));
     this.req.addEventListener("timeout", this.error.bind(this, callback));
     this.req.addEventListener("load", this.success.bind(this, callback));
-    this.req.open("GET", "https://query.yahooapis.com/v1/public/yql" + q);
+    this.req.open("GET", "https://geocoder.api.here.com/6.2/geocode.json" + params);
     this.req.send();
 };
+
 GeoLookup.prototype.parseLocations = function (http_response) {
+    let result_locations = [];
     try {
-        var response = JSON.parse(http_response.responseText);
-        if (response.error != undefined) {
+        const response = JSON.parse(http_response.responseText);
+        if (response.Response == undefined) {
             provider_logger.info("ERROR: " + http_response.responseText);
             return [];
         }
-        if (response.query.results == null) {
+        if (response.Response.View.length == 0) {
             return [];
         }
+	    result_locations = response.Response.View[0].Result;
     } catch (e) {
         provider_logger.error(e);
         return [];
     }
-
-    let places = response.query.results.place;
-    if (!Array.isArray(places)) {
-        places = [places];
-    }
-    let hitting_locations = places.map(function (place) {
-        let hierarchy = [place.admin3, place.admin2, place.admin1].filter(e => e != null).map(e => e.content);
-        let name = place.name + ", " + place.country.code + " " + hierarchy[0] || "";
-        let desc = name;
-        let hierarchy_str = hierarchy.join("|");
-        if (hierarchy_str.length > 0)
-            desc = "(" + hierarchy_str + ")";
-
-        return [name, JSON.stringify({'geo': place.centroid, 'id': place.woeid, 'tz': place.timezone.content}), desc]
-    });
-    return hitting_locations;
+    let locations = result_locations.map(function (location) {
+		let geo = { "latitude":location.Location.DisplayPosition.Latitude, "longitude":location.Location.DisplayPosition.Longitude};
+		let name = location.Location.Address.Label;
+		let tz = location.Location.AdminInfo.TimeZone.id;
+		let id = location.Location.LocationId;
+		
+		return [name, JSON.stringify({'geo': geo, 'id': id, 'tz': tz}), name];
+	});
+    return locations;
 };
